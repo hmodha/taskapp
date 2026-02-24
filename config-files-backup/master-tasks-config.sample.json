@@ -1,0 +1,251 @@
+{
+  "_metadata": {
+    "_comment": "master-tasks-config.json — Defines all task categories and tasks available in the app.",
+    "_comment_2": "All user-facing string values are i18n keys — never raw strings.",
+    "_comment_3": "Resolution order for any value: user_preferences → task_config (this file) → global_config.",
+    "_comment_4": "THIS FILE IS A SAMPLE — contains one category and one task to validate structure.",
+    "_comment_5": "Once structure is approved, all categories and tasks will be added.",
+    "_comment_6": "Fields marked OPTIONAL can be omitted — ConfigResolver falls back to global config.",
+    "_comment_7": "Fields marked REQUIRED must be present for every task.",
+    "_comment_8": "category_id and task_id must be unique across the entire file.",
+    "_comment_9": "task_id format: category_id.task_name — e.g. home_cleaning.laundry",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "product"
+  },
+
+  "config": {
+    "_comment": "Top-level config behaviour for this file.",
+
+    "load_strategy": "on_demand_by_category",
+    "_comment_load": "Categories are loaded individually when user taps them. Not all loaded at startup.",
+
+    "category_id_format": "snake_case",
+    "_comment_format": "e.g. home_cleaning, pet_health, vehicle_maintenance.",
+
+    "task_id_format": "category_id.task_name",
+    "_comment_task_format": "e.g. home_cleaning.laundry, pet_health.dog_flea_treatment.",
+
+    "default_hidden_categories": [],
+    "_comment_hidden": "Categories hidden by default until unlocked. e.g. pet categories hidden until pet selected in wizard.",
+
+    "pet_controlled_categories": ["pet_care", "pet_health", "pet_grooming"],
+    "_comment_pet": "These categories visibility is controlled by pets-config.json category_visibility_rules.",
+
+    "source_field_values": {
+      "_comment": "Valid values for the task.source field — identifies how a task was created.",
+      "values": ["manual", "dvla_api", "bin_api", "gp_api", "push_server", "setup_wizard"]
+    }
+  },
+
+  "categories": [
+
+    {
+      "_comment": "====== SAMPLE CATEGORY — home_cleaning ======",
+      "_comment_2": "This is a representative example. All categories follow this exact structure.",
+
+      "id": "home_cleaning",
+      "_comment_id": "REQUIRED. Unique snake_case identifier. Referenced by task_id prefix and pets-config.json.",
+
+      "label_key": "category.home_cleaning.label",
+      "_comment_label": "REQUIRED. i18n key resolved to display name e.g. 'Home Cleaning'.",
+
+      "description_key": "category.home_cleaning.description",
+      "_comment_description": "OPTIONAL. Short description shown on category card e.g. 'Keep your home clean and tidy'.",
+
+      "icon": "cleaning_services",
+      "_comment_icon": "REQUIRED. Material icon name or custom asset path e.g. 'assets/icons/categories/cleaning.svg'.",
+
+      "color_key": "category.home_cleaning.color",
+      "_comment_color": "REQUIRED. i18n key that resolves to a hex colour. Defined per theme in theme-config.json.",
+      "_comment_color_2": "Alternatively use a direct hex value if colour is theme-independent: '#4F46E5'.",
+      "color_hex": "#2D6A4F",
+      "_comment_color_hex": "OPTIONAL. Direct hex fallback if color_key is not resolved. One of these must be present.",
+
+      "sort_order": 1,
+      "_comment_sort": "REQUIRED. Display order on the category screen. Lower numbers appear first.",
+
+      "enabled": true,
+      "_comment_enabled": "REQUIRED. If false, category is hidden from all screens. Use for disabling without deleting.",
+
+      "default_hidden": false,
+      "_comment_hidden": "OPTIONAL. If true, hidden until unlocked by a condition (e.g. pet selection). Default false.",
+
+      "unlock_condition": null,
+      "_comment_unlock": "OPTIONAL. Condition that makes this category visible. null = always visible.",
+      "_comment_unlock_2": "Examples: 'pet.dog' | 'pet.cat' | 'household.under_5' | 'vehicle.car'.",
+
+      "age_group_filter": [],
+      "_comment_age": "OPTIONAL. If set, category only shown for households with matching age groups.",
+      "_comment_age_2": "e.g. ['under_5', '5_to_12'] — show only if household has young children.",
+      "_comment_age_3": "Empty array = show for all households regardless of age groups.",
+
+      "location_filter": [],
+      "_comment_location": "OPTIONAL. If set, category only relevant to users with these locations in their home.",
+      "_comment_location_2": "e.g. ['location.garage'] for a car maintenance category.",
+      "_comment_location_3": "Empty array = show regardless of user home locations.",
+
+      "tasks": [
+
+        {
+          "_comment": "====== SAMPLE TASK — home_cleaning.laundry ======",
+          "_comment_2": "This is a fully populated example showing every possible field.",
+          "_comment_3": "Most tasks will not need all fields — optional ones can be omitted.",
+
+          "id": "home_cleaning.laundry",
+          "_comment_id": "REQUIRED. Unique. Format: category_id.task_name.",
+
+          "name_key": "task.home_cleaning.laundry.name",
+          "_comment_name": "REQUIRED. i18n key for the task name e.g. 'Laundry'.",
+
+          "short_name_key": "task.home_cleaning.laundry.short_name",
+          "_comment_short": "OPTIONAL. Shorter version used in notifications and list rows where space is limited.",
+
+          "description_key": "task.home_cleaning.laundry.description",
+          "_comment_description": "OPTIONAL. Help text shown on schedule screen below task name.",
+          "_comment_description_2": "e.g. 'Schedule your laundry so it never piles up.'",
+
+          "icon": "local_laundry_service",
+          "_comment_icon": "OPTIONAL. Task-specific icon. Falls back to category icon if omitted.",
+
+          "enabled": true,
+          "_comment_enabled": "REQUIRED. Set false to hide task without deleting it.",
+
+          "sort_order": 1,
+          "_comment_sort": "REQUIRED. Display order within the category task list.",
+
+          "source": "manual",
+          "_comment_source": "REQUIRED. How this task enters the app.",
+          "_comment_source_values": "Options: 'manual' | 'dvla_api' | 'bin_api' | 'gp_api' | 'push_server' | 'setup_wizard'.",
+
+          "locations": {
+            "_comment": "OPTIONAL. If present, location selector shown on schedule screen.",
+            "_comment_2": "If absent or empty, location section is hidden on schedule screen entirely.",
+            "_comment_3": "Shown locations are intersected with user's home locations from preferences.",
+            "enabled": true,
+            "options_keys": [
+              "location.bedroom",
+              "location.bathroom",
+              "location.utility_room",
+              "location.hallway"
+            ],
+            "_comment_options": "i18n keys matching locations in ui-global-config.json default_locations_keys.",
+            "multi_select": false,
+            "_comment_multi": "false = user picks one location per task. true = task can apply to multiple locations."
+          },
+
+          "allowed_repeats": {
+            "_comment": "OPTIONAL. Restricts which repeat patterns are available for this task.",
+            "_comment_2": "If omitted or empty, all repeats from schedule-global-config.json repeat.default_options are shown.",
+            "_comment_3": "e.g. Car MOT would have only ['yearly']. Laundry has multiple options.",
+            "options": ["daily", "weekly", "biweekly", "monthly"],
+            "_comment_options": "Must be values from: never, daily, weekly, biweekly, monthly, quarterly, yearly."
+          },
+
+          "multiple_times_per_day": {
+            "_comment": "OPTIONAL. Controls whether 'Add more times' appears when daily repeat is selected.",
+            "_comment_2": "If omitted, multiple times is not allowed for this task.",
+            "enabled": true,
+            "max_times": 4,
+            "_comment_max": "Maximum number of daily time slots user can add. Overrides global default.",
+            "default_times": ["08:00", "20:00"],
+            "_comment_default": "OPTIONAL. Pre-filled times shown when task is first opened."
+          },
+
+          "default_repeat": "weekly",
+          "_comment_default_repeat": "OPTIONAL. Pre-selected repeat option when user opens schedule screen for this task.",
+          "_comment_default_repeat_2": "Must be one of the values in allowed_repeats.options.",
+
+          "default_time": "09:00",
+          "_comment_default_time": "OPTIONAL. Pre-selected time. Resolution: user_preferred_time → this → global default.",
+
+          "default_days": ["monday", "thursday"],
+          "_comment_default_days": "OPTIONAL. Pre-selected days for weekly/biweekly repeat.",
+          "_comment_default_days_2": "Values must match keys in schedule-global-config.json week_days.",
+
+          "reminder_options": {
+            "_comment": "OPTIONAL. Custom remind-me options for this specific task.",
+            "_comment_2": "If omitted, reminder options from schedule-global-config.json reminder_options are used.",
+            "_comment_3": "Resolution: user_preferred_reminders → this → global reminder_options.",
+            "options_minutes": [10, 30, 60],
+            "default_selected_minutes": [30],
+            "_comment_default": "OPTIONAL. Pre-selected reminder option. Overridden by user preferred reminders."
+          },
+
+          "notification": {
+            "_comment": "OPTIONAL. Task-specific notification content.",
+            "_comment_2": "If omitted, notification-config.json task_reminder fallback templates are used.",
+
+            "custom_message_key": "task.home_cleaning.laundry.notification_message",
+            "_comment_custom": "OPTIONAL. Custom notification body for this task.",
+            "_comment_custom_2": "e.g. 'Time to do a load of laundry! 🧺'",
+            "_comment_custom_3": "If null, notification-config.json resolution order applies.",
+
+            "channels": {
+              "_comment": "OPTIONAL. Default notification channels for this task.",
+              "_comment_2": "Resolution: user_preferences → this → notification-global-config.json defaults.",
+              "app": true,
+              "alarm": false,
+              "email": false,
+              "whatsapp": false
+            }
+          },
+
+          "alarm": {
+            "_comment": "OPTIONAL. Task-specific alarm defaults.",
+            "enabled_by_default": false,
+            "_comment_enabled": "If true, alarm toggle is pre-selected when user opens schedule screen for this task."
+          },
+
+          "summary": {
+            "_comment": "OPTIONAL. Controls the summary section on the schedule screen for this task.",
+            "_comment_2": "If omitted, summary section follows show_summary_section from schedule-global-config.json.",
+            "enabled": true
+          },
+
+          "save_confirmation": {
+            "_comment": "OPTIONAL. Overrides the save confirmation word from schedule-global-config.json.",
+            "word_key": null,
+            "_comment_word": "null = use global schedule.save_confirmation_word_key. Set a key to override per task."
+          },
+
+          "points": {
+            "_comment": "OPTIONAL. Per-task points override. If omitted, points-global-config.json value is used.",
+            "per_completion": 1,
+            "_comment_per": "Points awarded each time this task is completed."
+          },
+
+          "age_group_filter": [],
+          "_comment_age": "OPTIONAL. If set, task only shown for matching household age groups. Empty = show for all.",
+
+          "pet_filter": [],
+          "_comment_pet": "OPTIONAL. If set, task only shown if user has matching pet type. Empty = show for all.",
+
+          "tags": ["cleaning", "home", "regular"],
+          "_comment_tags": "OPTIONAL. Tags for future filtering, search, and analytics. Free-form strings.",
+
+          "api_source": {
+            "_comment": "OPTIONAL. Only present for tasks created by external API lookups.",
+            "_comment_2": "For manually created tasks, this entire block is omitted.",
+            "api_type": null,
+            "_comment_api_type": "Options: null | 'dvla' | 'bin_collection' | 'gp' | 'push_server'.",
+            "prepopulate_schedule_screen": false,
+            "_comment_prepopulate": "If true, schedule screen opens prepopulated from API response.",
+            "user_can_modify": true,
+            "_comment_modify": "If true, user can change any prepopulated value before saving."
+          },
+
+          "metadata": {
+            "_comment": "OPTIONAL. Internal metadata. Not shown to users.",
+            "created_at_version": "1.0.0",
+            "_comment_created": "App version when this task was first added to config.",
+            "last_updated_version": "1.0.0",
+            "notes": "Core household task. One of the most commonly scheduled tasks."
+          }
+        }
+
+      ]
+    }
+
+  ]
+}

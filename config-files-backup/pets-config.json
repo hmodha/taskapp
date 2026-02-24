@@ -1,0 +1,492 @@
+{
+  "_metadata": {
+    "_comment": "pets-config.json — Pet types, icons, category and task visibility rules, and notification personalisation.",
+    "_comment_2": "All user-facing string values are i18n keys — never raw strings.",
+    "_comment_3": "category_visibility_rules define which task categories become visible when a pet type is selected.",
+    "_comment_4": "task_associations define specific tasks unlocked per pet type in master-tasks-config.json.",
+    "_comment_5": "notification_personalisation defines how pet names are used in task notification messages.",
+    "_comment_6": "Pet types are shown as selectable cards in setup wizard Q6 and in user preferences.",
+    "_comment_7": "To add a new pet type: add an entry to the 'types' array and add i18n keys to all ARB files.",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "product"
+  },
+
+  "display": {
+    "_comment": "How pet cards are rendered in setup wizard Q6 and preferences screen.",
+    "card_style": "icon_with_label",
+    "_comment_style": "Options: 'icon_with_label' | 'emoji_with_label' | 'image_with_label'.",
+    "multi_select": true,
+    "show_name_entry_after_selection": true,
+    "_comment_name_entry": "After selecting a pet type, an optional name field appears below the card.",
+    "max_pets_per_type": 3,
+    "_comment_max": "User can add up to 3 names per pet type e.g. 3 cats named Whiskers, Mittens, Luna.",
+    "name_max_length": 30,
+    "name_optional": true,
+    "_comment_name_optional": "Pet name is always optional. Tasks are still unlocked without a name.",
+    "name_placeholder_key": "pets.name_placeholder",
+    "add_another_label_key": "pets.add_another_name",
+    "_comment_add_another": "e.g. '+ Add another cat' — lets user name a second/third pet of the same type."
+  },
+
+  "types": [
+
+    {
+      "id": "dog",
+      "label_key": "pet.dog.label",
+      "plural_label_key": "pet.dog.plural",
+      "emoji": "🐕",
+      "icon_asset": "assets/icons/pets/dog.svg",
+      "_comment": "Most common UK pet. Unlocks walking, grooming, vet, flea treatment categories.",
+      "enabled": true,
+      "sort_order": 1,
+
+      "category_visibility_rules": {
+        "_comment": "Categories made visible in task screen when dog is selected.",
+        "show_categories": ["pet_care", "pet_health", "pet_grooming"],
+        "hide_categories": [],
+        "_comment_hide": "Categories to hide when ONLY this pet is selected. Empty = hide nothing."
+      },
+
+      "task_associations": {
+        "_comment": "Specific task IDs within categories that are unlocked by selecting dog.",
+        "_comment_2": "task_ids must exist in master-tasks-config.json.",
+        "unlocked_tasks": [
+          "pet_care.dog_walk_morning",
+          "pet_care.dog_walk_evening",
+          "pet_care.dog_feeding",
+          "pet_health.dog_flea_treatment",
+          "pet_health.dog_worming_treatment",
+          "pet_health.dog_vet_checkup",
+          "pet_health.dog_vaccination",
+          "pet_health.dog_insurance_renewal",
+          "pet_grooming.dog_grooming_appointment",
+          "pet_grooming.dog_nail_trim",
+          "pet_grooming.dog_bath"
+        ]
+      },
+
+      "notification_personalisation": {
+        "_comment": "When a pet name is saved, notification messages use the name for a personal touch.",
+        "use_name_in_notifications": true,
+        "name_placeholder": "{pet_name}",
+        "fallback_without_name_key": "pet.dog.fallback_name",
+        "_comment_fallback": "Used in notifications when no name given e.g. 'your dog'.",
+        "example_with_name": "Time for Buddy's morning walk 🐕",
+        "example_without_name": "Time for your dog's morning walk 🐕"
+      },
+
+      "default_reminder_options_minutes": [10, 30],
+      "_comment_reminders": "Default remind-me options pre-selected for dog tasks. Overridden by user preferences."
+    },
+
+    {
+      "id": "cat",
+      "label_key": "pet.cat.label",
+      "plural_label_key": "pet.cat.plural",
+      "emoji": "🐈",
+      "icon_asset": "assets/icons/pets/cat.svg",
+      "_comment": "Second most common UK pet. Unlocks feeding, vet, flea treatment, litter tasks.",
+      "enabled": true,
+      "sort_order": 2,
+
+      "category_visibility_rules": {
+        "show_categories": ["pet_care", "pet_health", "pet_grooming"],
+        "hide_categories": []
+      },
+
+      "task_associations": {
+        "unlocked_tasks": [
+          "pet_care.cat_feeding",
+          "pet_care.cat_litter_change",
+          "pet_health.cat_flea_treatment",
+          "pet_health.cat_worming_treatment",
+          "pet_health.cat_vet_checkup",
+          "pet_health.cat_vaccination",
+          "pet_health.cat_insurance_renewal",
+          "pet_grooming.cat_grooming",
+          "pet_grooming.cat_nail_trim"
+        ]
+      },
+
+      "notification_personalisation": {
+        "use_name_in_notifications": true,
+        "name_placeholder": "{pet_name}",
+        "fallback_without_name_key": "pet.cat.fallback_name",
+        "example_with_name": "Time to change Whiskers' litter tray 🐈",
+        "example_without_name": "Time to change your cat's litter tray 🐈"
+      },
+
+      "default_reminder_options_minutes": [10, 30]
+    },
+
+    {
+      "id": "rabbit",
+      "label_key": "pet.rabbit.label",
+      "plural_label_key": "pet.rabbit.plural",
+      "emoji": "🐇",
+      "icon_asset": "assets/icons/pets/rabbit.svg",
+      "_comment": "Popular UK small pet. Unlocks feeding, hutch cleaning, vet tasks.",
+      "enabled": true,
+      "sort_order": 3,
+
+      "category_visibility_rules": {
+        "show_categories": ["pet_care", "pet_health"],
+        "hide_categories": []
+      },
+
+      "task_associations": {
+        "unlocked_tasks": [
+          "pet_care.rabbit_feeding",
+          "pet_care.rabbit_hutch_clean",
+          "pet_care.rabbit_exercise_time",
+          "pet_health.rabbit_flea_treatment",
+          "pet_health.rabbit_vet_checkup",
+          "pet_health.rabbit_vaccination",
+          "pet_health.rabbit_nail_trim"
+        ]
+      },
+
+      "notification_personalisation": {
+        "use_name_in_notifications": true,
+        "name_placeholder": "{pet_name}",
+        "fallback_without_name_key": "pet.rabbit.fallback_name",
+        "example_with_name": "Time to clean Thumper's hutch 🐇",
+        "example_without_name": "Time to clean your rabbit's hutch 🐇"
+      },
+
+      "default_reminder_options_minutes": [15, 30]
+    },
+
+    {
+      "id": "bird",
+      "label_key": "pet.bird.label",
+      "plural_label_key": "pet.bird.plural",
+      "emoji": "🐦",
+      "icon_asset": "assets/icons/pets/bird.svg",
+      "_comment": "Covers parrots, budgies, canaries, cockatoos etc. Unlocks feeding, cage cleaning.",
+      "enabled": true,
+      "sort_order": 4,
+
+      "category_visibility_rules": {
+        "show_categories": ["pet_care", "pet_health"],
+        "hide_categories": []
+      },
+
+      "task_associations": {
+        "unlocked_tasks": [
+          "pet_care.bird_feeding",
+          "pet_care.bird_water_change",
+          "pet_care.bird_cage_clean",
+          "pet_health.bird_vet_checkup",
+          "pet_health.bird_nail_wing_trim"
+        ]
+      },
+
+      "notification_personalisation": {
+        "use_name_in_notifications": true,
+        "name_placeholder": "{pet_name}",
+        "fallback_without_name_key": "pet.bird.fallback_name",
+        "example_with_name": "Time to clean Polly's cage 🐦",
+        "example_without_name": "Time to clean your bird's cage 🐦"
+      },
+
+      "default_reminder_options_minutes": [15, 30]
+    },
+
+    {
+      "id": "fish",
+      "label_key": "pet.fish.label",
+      "plural_label_key": "pet.fish.plural",
+      "emoji": "🐠",
+      "icon_asset": "assets/icons/pets/fish.svg",
+      "_comment": "Freshwater and marine fish. Unlocks feeding, tank cleaning, water testing tasks.",
+      "enabled": true,
+      "sort_order": 5,
+
+      "category_visibility_rules": {
+        "show_categories": ["pet_care"],
+        "hide_categories": []
+      },
+
+      "task_associations": {
+        "unlocked_tasks": [
+          "pet_care.fish_feeding",
+          "pet_care.fish_tank_water_change",
+          "pet_care.fish_tank_filter_clean",
+          "pet_care.fish_tank_water_test",
+          "pet_care.fish_tank_glass_clean"
+        ]
+      },
+
+      "notification_personalisation": {
+        "use_name_in_notifications": false,
+        "_comment": "Fish are typically not named individually. Use generic tank references.",
+        "fallback_without_name_key": "pet.fish.fallback_name",
+        "example_without_name": "Time to change the fish tank water 🐠"
+      },
+
+      "default_reminder_options_minutes": [15, 60]
+    },
+
+    {
+      "id": "guinea_pig",
+      "label_key": "pet.guinea_pig.label",
+      "plural_label_key": "pet.guinea_pig.plural",
+      "emoji": "🐹",
+      "icon_asset": "assets/icons/pets/guinea_pig.svg",
+      "_comment": "Popular UK family pet. Unlocks feeding, cage cleaning, health tasks.",
+      "enabled": true,
+      "sort_order": 6,
+
+      "category_visibility_rules": {
+        "show_categories": ["pet_care", "pet_health"],
+        "hide_categories": []
+      },
+
+      "task_associations": {
+        "unlocked_tasks": [
+          "pet_care.guinea_pig_feeding",
+          "pet_care.guinea_pig_cage_clean",
+          "pet_care.guinea_pig_exercise_time",
+          "pet_health.guinea_pig_vet_checkup",
+          "pet_health.guinea_pig_nail_trim"
+        ]
+      },
+
+      "notification_personalisation": {
+        "use_name_in_notifications": true,
+        "name_placeholder": "{pet_name}",
+        "fallback_without_name_key": "pet.guinea_pig.fallback_name",
+        "example_with_name": "Time to feed Peanut 🐹",
+        "example_without_name": "Time to feed your guinea pig 🐹"
+      },
+
+      "default_reminder_options_minutes": [15, 30]
+    },
+
+    {
+      "id": "hamster",
+      "label_key": "pet.hamster.label",
+      "plural_label_key": "pet.hamster.plural",
+      "emoji": "🐭",
+      "icon_asset": "assets/icons/pets/hamster.svg",
+      "_comment": "Common children's pet. Unlocks feeding, cage cleaning tasks.",
+      "enabled": true,
+      "sort_order": 7,
+
+      "category_visibility_rules": {
+        "show_categories": ["pet_care"],
+        "hide_categories": []
+      },
+
+      "task_associations": {
+        "unlocked_tasks": [
+          "pet_care.hamster_feeding",
+          "pet_care.hamster_cage_clean",
+          "pet_care.hamster_water_change"
+        ]
+      },
+
+      "notification_personalisation": {
+        "use_name_in_notifications": true,
+        "name_placeholder": "{pet_name}",
+        "fallback_without_name_key": "pet.hamster.fallback_name",
+        "example_with_name": "Time to clean Nibbles' cage 🐭",
+        "example_without_name": "Time to clean your hamster's cage 🐭"
+      },
+
+      "default_reminder_options_minutes": [15, 30]
+    },
+
+    {
+      "id": "reptile",
+      "label_key": "pet.reptile.label",
+      "plural_label_key": "pet.reptile.plural",
+      "emoji": "🦎",
+      "icon_asset": "assets/icons/pets/reptile.svg",
+      "_comment": "Covers snakes, lizards, tortoises, geckos etc. Growing UK pet segment.",
+      "enabled": true,
+      "sort_order": 8,
+
+      "category_visibility_rules": {
+        "show_categories": ["pet_care", "pet_health"],
+        "hide_categories": []
+      },
+
+      "task_associations": {
+        "unlocked_tasks": [
+          "pet_care.reptile_feeding",
+          "pet_care.reptile_enclosure_clean",
+          "pet_care.reptile_uv_bulb_replace",
+          "pet_care.reptile_water_change",
+          "pet_health.reptile_vet_checkup",
+          "pet_health.reptile_shed_check"
+        ]
+      },
+
+      "notification_personalisation": {
+        "use_name_in_notifications": true,
+        "name_placeholder": "{pet_name}",
+        "fallback_without_name_key": "pet.reptile.fallback_name",
+        "example_with_name": "Time to feed Spike 🦎",
+        "example_without_name": "Time to feed your reptile 🦎"
+      },
+
+      "default_reminder_options_minutes": [30, 60]
+    },
+
+    {
+      "id": "horse",
+      "label_key": "pet.horse.label",
+      "plural_label_key": "pet.horse.plural",
+      "emoji": "🐴",
+      "icon_asset": "assets/icons/pets/horse.svg",
+      "_comment": "Significant UK rural pet/hobby animal. Unlocks extensive care and health tasks.",
+      "enabled": true,
+      "sort_order": 9,
+
+      "category_visibility_rules": {
+        "show_categories": ["pet_care", "pet_health", "pet_grooming"],
+        "hide_categories": []
+      },
+
+      "task_associations": {
+        "unlocked_tasks": [
+          "pet_care.horse_feeding_morning",
+          "pet_care.horse_feeding_evening",
+          "pet_care.horse_mucking_out",
+          "pet_care.horse_turnout",
+          "pet_care.horse_rugging",
+          "pet_health.horse_vet_checkup",
+          "pet_health.horse_worming_treatment",
+          "pet_health.horse_vaccination",
+          "pet_health.horse_farrier_appointment",
+          "pet_health.horse_dental_checkup",
+          "pet_health.horse_insurance_renewal",
+          "pet_grooming.horse_grooming",
+          "pet_grooming.horse_mane_tail_trim"
+        ]
+      },
+
+      "notification_personalisation": {
+        "use_name_in_notifications": true,
+        "name_placeholder": "{pet_name}",
+        "fallback_without_name_key": "pet.horse.fallback_name",
+        "example_with_name": "Time to muck out Bella's stable 🐴",
+        "example_without_name": "Time to muck out your horse's stable 🐴"
+      },
+
+      "default_reminder_options_minutes": [30, 60]
+    },
+
+    {
+      "id": "other",
+      "label_key": "pet.other.label",
+      "plural_label_key": "pet.other.plural",
+      "emoji": "🐾",
+      "icon_asset": "assets/icons/pets/other.svg",
+      "_comment": "Catch-all for exotic or unusual pets not listed above. Shows general pet care tasks.",
+      "enabled": true,
+      "sort_order": 10,
+
+      "category_visibility_rules": {
+        "show_categories": ["pet_care"],
+        "hide_categories": []
+      },
+
+      "task_associations": {
+        "unlocked_tasks": [
+          "pet_care.other_pet_feeding",
+          "pet_care.other_pet_habitat_clean",
+          "pet_health.other_pet_vet_checkup"
+        ]
+      },
+
+      "notification_personalisation": {
+        "use_name_in_notifications": true,
+        "name_placeholder": "{pet_name}",
+        "fallback_without_name_key": "pet.other.fallback_name",
+        "example_with_name": "Time to care for {pet_name} 🐾",
+        "example_without_name": "Time to care for your pet 🐾"
+      },
+
+      "default_reminder_options_minutes": [15, 30]
+    }
+  ],
+
+  "categories": {
+    "_comment": "Pet task category definitions. These must match category IDs in master-tasks-config.json.",
+    "_comment_2": "Categories are hidden by default and shown only when a relevant pet type is selected.",
+
+    "pet_care": {
+      "id": "pet_care",
+      "label_key": "category.pet_care.label",
+      "icon": "pets",
+      "color_key": "category.pet_care.color",
+      "default_hidden": true,
+      "_comment_hidden": "Hidden until at least one pet type is selected by the user.",
+      "shown_for_pets": ["dog", "cat", "rabbit", "bird", "fish", "guinea_pig", "hamster", "reptile", "horse", "other"]
+    },
+
+    "pet_health": {
+      "id": "pet_health",
+      "label_key": "category.pet_health.label",
+      "icon": "health_and_safety",
+      "color_key": "category.pet_health.color",
+      "default_hidden": true,
+      "shown_for_pets": ["dog", "cat", "rabbit", "bird", "guinea_pig", "reptile", "horse", "other"]
+    },
+
+    "pet_grooming": {
+      "id": "pet_grooming",
+      "label_key": "category.pet_grooming.label",
+      "icon": "content_cut",
+      "color_key": "category.pet_grooming.color",
+      "default_hidden": true,
+      "shown_for_pets": ["dog", "cat", "rabbit", "horse"]
+    }
+  },
+
+  "category_visibility_logic": {
+    "_comment": "Rules for how category visibility is computed from selected pets.",
+
+    "mode": "union",
+    "_comment_mode": "Options: 'union' | 'intersection'.",
+    "_comment_union": "'union' = show a category if ANY selected pet unlocks it. Recommended.",
+    "_comment_intersection": "'intersection' = show only if ALL selected pets unlock it. Too restrictive.",
+
+    "apply_on": ["setup_wizard_completion", "preferences_update", "app_launch"],
+    "_comment_apply": "Category visibility is recomputed at these events to reflect latest pet selections.",
+
+    "store_computed_visibility": true,
+    "_comment_store": "Computed visible category IDs cached in user_preferences.visible_category_ids.",
+    "visibility_storage_key": "user_preferences.visible_category_ids"
+  },
+
+  "notification_personalisation": {
+    "_comment": "Global rules for how pet names are used across all pet-related task notifications.",
+
+    "name_resolution_order": [
+      "user_preferences.pets[type].names[0]",
+      "pet_type_fallback_key"
+    ],
+    "_comment_resolution": "Use first saved pet name if available, else use generic fallback key.",
+
+    "multiple_pets_same_type_behaviour": "use_first_name",
+    "_comment_multi": "If user has 3 dogs named Buddy, Max, Rex — use 'Buddy' in notifications unless task specifies a pet.",
+
+    "placeholder_in_templates": "{pet_name}",
+    "_comment_placeholder": "Notification templates in notification-config.json use this placeholder for pet names."
+  },
+
+  "extensibility": {
+    "_comment": "How to add a new pet type in future.",
+    "_comment_2": "Step 1: Add a new entry to the 'types' array above with all required fields.",
+    "_comment_3": "Step 2: Add i18n keys to all language ARB files.",
+    "_comment_4": "Step 3: Add corresponding tasks to master-tasks-config.json under appropriate categories.",
+    "_comment_5": "Step 4: Add icon asset to assets/icons/pets/.",
+    "_comment_6": "Step 5: Update category_visibility_rules for the new pet type.",
+    "_comment_7": "No code changes required if the pet type follows the existing structure."
+  }
+}

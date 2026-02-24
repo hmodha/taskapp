@@ -1,0 +1,519 @@
+{
+  "_metadata": {
+    "_comment": "setup-config.json — Fully config-driven setup wizard questions, answer options, sequence, and behaviour.",
+    "_comment_2": "All question text, explanations, and answer options are i18n keys — never raw strings.",
+    "_comment_3": "Question sequence is driven by the 'sequence' array below — reorder questions without code changes.",
+    "_comment_4": "Each question has: id, type, title_key, explanation_key, answer options, storage_key, and skip behaviour.",
+    "_comment_5": "When user taps Next, selected answers are stored in Isar under user_preferences using storage_key.",
+    "_comment_6": "All questions are optional — every question has a skip option.",
+    "_comment_7": "API calls triggered by questions (DVLA, bin collection) use the pending queue pattern from api-global-config.json.",
+    "_comment_8": "Questions with api_trigger will call the API immediately if online, or queue as api_lookup_pending if offline.",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "product"
+  },
+
+  "wizard": {
+    "_comment": "Top-level wizard settings. UI behaviour settings are in ui-global-config.json setup_wizard section.",
+
+    "sequence": [
+      "daily_timings",
+      "household_age_groups",
+      "home_locations",
+      "location_permission",
+      "vehicle_details",
+      "pet_details"
+    ],
+    "_comment_sequence": "Order of questions. Reorder this array to change the wizard flow without touching code.",
+
+    "skip_label_key": "setup_wizard.skip",
+    "next_label_key": "setup_wizard.next",
+    "back_label_key": "setup_wizard.back",
+    "finish_label_key": "setup_wizard.finish",
+    "progress_label_key": "setup_wizard.progress",
+    "_comment_progress": "e.g. 'Step 2 of 6'. Formatted at runtime with current_step and total_steps placeholders.",
+
+    "completion": {
+      "completed_flag_key": "setup_completed",
+      "_comment_flag": "Stored as true in user_preferences Isar collection when user completes or skips all questions.",
+      "celebration_animation": "confetti_burst",
+      "completion_title_key": "setup_wizard.completion.title",
+      "completion_message_key": "setup_wizard.completion.message",
+      "completion_cta_key": "setup_wizard.completion.cta",
+      "_comment_cta": "CTA button label after wizard completes e.g. 'Let's go!' — navigates to dashboard or category screen."
+    }
+  },
+
+  "questions": {
+
+    "daily_timings": {
+      "_comment": "Question 1 — Understand user's daily schedule: wake, sleep, job times.",
+      "_comment_2": "These values drive notification timing, quiet hours, and sleep-time schedule alerts.",
+      "_comment_3": "All fields are optional. If skipped, global time defaults from schedule-global-config.json are used.",
+
+      "id": "daily_timings",
+      "sequence_position": 1,
+      "type": "time_picker_group",
+      "_comment_type": "Custom widget type: renders multiple labelled time pickers in a single question screen.",
+
+      "title_key": "setup_wizard.q1.title",
+      "explanation_key": "setup_wizard.q1.explanation",
+      "_comment_example_title": "Tell us about your daily routine",
+      "_comment_example_explanation": "This helps us notify you at the right times and avoid disturbing you while you sleep.",
+
+      "illustration_asset": "assets/illustrations/clock_routine.svg",
+      "_comment_illustration": "Optional decorative illustration shown above the question. Set to null to hide.",
+
+      "time_pickers": [
+
+        {
+          "id": "wake_up_time",
+          "label_key": "setup_wizard.q1.wake_up_time",
+          "placeholder_key": "setup_wizard.q1.wake_up_time_placeholder",
+          "default_value_source": "schedule-global-config.time_defaults.wake_up_time",
+          "_comment_default": "Default from global config shown pre-selected. User can change.",
+          "storage_key": "user_preferences.wake_up_time",
+          "required": false,
+          "icon": "wb_sunny_outlined"
+        },
+
+        {
+          "id": "sleep_time",
+          "label_key": "setup_wizard.q1.sleep_time",
+          "placeholder_key": "setup_wizard.q1.sleep_time_placeholder",
+          "default_value_source": "schedule-global-config.time_defaults.sleep_time",
+          "storage_key": "user_preferences.sleep_time",
+          "required": false,
+          "icon": "bedtime_outlined"
+        },
+
+        {
+          "id": "job_start_time",
+          "label_key": "setup_wizard.q1.job_start_time",
+          "placeholder_key": "setup_wizard.q1.job_start_time_placeholder",
+          "default_value_source": "schedule-global-config.time_defaults.job_start_time",
+          "storage_key": "user_preferences.job_start_time",
+          "required": false,
+          "icon": "work_outline"
+        },
+
+        {
+          "id": "job_end_time",
+          "label_key": "setup_wizard.q1.job_end_time",
+          "placeholder_key": "setup_wizard.q1.job_end_time_placeholder",
+          "default_value_source": "schedule-global-config.time_defaults.job_end_time",
+          "storage_key": "user_preferences.job_end_time",
+          "required": false,
+          "icon": "work_off_outlined"
+        }
+
+      ],
+
+      "different_times_per_day": {
+        "_comment": "Toggle allowing user to set different timings for weekdays vs weekends.",
+        "enabled": true,
+        "toggle_label_key": "setup_wizard.q1.different_times_toggle",
+        "_comment_example": "e.g. 'Set different times for weekends'",
+        "weekend_pickers": [
+          {
+            "id": "weekend_wake_up_time",
+            "label_key": "setup_wizard.q1.weekend_wake_up",
+            "default_value_source": "schedule-global-config.time_defaults.weekend_wake_up_time",
+            "storage_key": "user_preferences.weekend_wake_up_time"
+          },
+          {
+            "id": "weekend_sleep_time",
+            "label_key": "setup_wizard.q1.weekend_sleep_time",
+            "default_value_source": "schedule-global-config.time_defaults.weekend_sleep_time",
+            "storage_key": "user_preferences.weekend_sleep_time"
+          }
+        ]
+      },
+
+      "days_off": {
+        "_comment": "Multi-select day picker for user's regular days off.",
+        "enabled": true,
+        "label_key": "setup_wizard.q1.days_off_label",
+        "day_options_source": "schedule-global-config.week_days.short_names_keys",
+        "_comment_source": "Day names loaded from config — never hardcoded.",
+        "default_selection_source": "schedule-global-config.time_defaults.weekend_days_off",
+        "storage_key": "user_preferences.days_off",
+        "multi_select": true
+      },
+
+      "alerts": {
+        "sleep_time_schedule_alert": {
+          "_comment": "Shown on schedule screen (not wizard) if user tries to schedule during sleep time.",
+          "message_key": "schedule.sleep_time_alert",
+          "enabled": true
+        },
+        "sleep_time_notification_suppression": {
+          "_comment": "No notifications fire during sleep window. Configures quiet hours.",
+          "message_key": "setup_wizard.q1.sleep_notification_info",
+          "enabled": true
+        }
+      },
+
+      "storage_keys_summary": {
+        "_comment": "All Isar user_preferences keys written by this question.",
+        "keys": [
+          "user_preferences.wake_up_time",
+          "user_preferences.sleep_time",
+          "user_preferences.job_start_time",
+          "user_preferences.job_end_time",
+          "user_preferences.weekend_wake_up_time",
+          "user_preferences.weekend_sleep_time",
+          "user_preferences.days_off",
+          "user_preferences.home_timezone"
+        ],
+        "_comment_timezone": "home_timezone auto-detected from device on this screen and stored alongside timing preferences."
+      },
+
+      "skip_behaviour": {
+        "on_skip": "use_global_defaults",
+        "_comment": "If user skips, all time values fall back to schedule-global-config.json time_defaults."
+      }
+    },
+
+    "household_age_groups": {
+      "_comment": "Question 2 — Understand how many age groups live in the household.",
+      "_comment_2": "Used in future to filter task categories and tasks relevant to household composition.",
+      "_comment_3": "Multi-select — households often have multiple age groups.",
+
+      "id": "household_age_groups",
+      "sequence_position": 2,
+      "type": "multi_select_cards",
+      "_comment_type": "Renders age group options as tappable icon cards. Multi-select enabled.",
+
+      "title_key": "setup_wizard.q2.title",
+      "explanation_key": "setup_wizard.q2.explanation",
+      "_comment_example_title": "Who lives in your home?",
+      "_comment_example_explanation": "This helps us suggest tasks relevant to everyone in your household.",
+
+      "illustration_asset": "assets/illustrations/household_family.svg",
+
+      "options_source": "ui-global-config.household.age_groups",
+      "_comment_source": "Age group options loaded from ui-global-config.json — never hardcoded here.",
+
+      "multi_select": true,
+      "min_selections": 0,
+      "max_selections": -1,
+      "_comment_max": "-1 = unlimited selections.",
+
+      "storage_key": "user_preferences.household_age_groups",
+      "_comment_storage": "Stored as array of selected age_group ids e.g. ['18_to_60', 'under_5'].",
+
+      "future_use_note": "Reserved for future task category filtering by household composition.",
+
+      "skip_behaviour": {
+        "on_skip": "store_empty_array",
+        "_comment": "If skipped, store empty array. App shows all categories without filtering."
+      }
+    },
+
+    "home_locations": {
+      "_comment": "Question 3 — Understand what spaces exist in the user's home.",
+      "_comment_2": "Selected locations intersect with task config locations on schedule screen.",
+      "_comment_3": "Prevents showing 'Garage' option to users who don't have a garage.",
+      "_comment_4": "Custom locations can be added and are synced to backend for review.",
+
+      "id": "home_locations",
+      "sequence_position": 3,
+      "type": "multi_select_chips_with_custom",
+      "_comment_type": "Chip multi-select with a free-text add field for custom locations.",
+
+      "title_key": "setup_wizard.q3.title",
+      "explanation_key": "setup_wizard.q3.explanation",
+      "_comment_example_title": "What spaces do you have at home?",
+      "_comment_example_explanation": "Select all that apply. This helps us show only relevant location options when you set up tasks.",
+
+      "illustration_asset": "assets/illustrations/home_layout.svg",
+
+      "options_source": "ui-global-config.location.default_locations_keys",
+      "_comment_source": "Default location list from ui-global-config.json. Resolved through i18n.",
+
+      "multi_select": true,
+      "min_selections": 0,
+      "max_selections": -1,
+
+      "custom_location": {
+        "enabled": true,
+        "add_button_label_key": "setup_wizard.q3.add_custom_location",
+        "input_placeholder_key": "setup_wizard.q3.custom_location_placeholder",
+        "max_custom_locations": 10,
+        "_comment_max": "Reasonable limit to prevent abuse.",
+        "backend_sync": {
+          "_comment": "Custom locations submitted to backend for product review — improves global defaults.",
+          "enabled": true,
+          "method": "stub",
+          "_comment_stub": "Backend not yet implemented. Use empty async stub method. Wire up when backend ready.",
+          "stub_method_name": "LocationSyncService.submitCustomLocation(location)"
+        }
+      },
+
+      "storage_key": "user_preferences.home_locations",
+      "_comment_storage": "Stored as array e.g. ['location.living_room', 'location.garage', 'My Summerhouse'].",
+      "custom_locations_storage_key": "user_preferences.custom_locations",
+
+      "skip_behaviour": {
+        "on_skip": "store_all_defaults",
+        "_comment": "If skipped, store all default locations. User sees all location options on schedule screen."
+      }
+    },
+
+    "location_permission": {
+      "_comment": "Question 4 — Request location permission or capture postcode for bin collection and weather.",
+      "_comment_2": "If location granted: use GPS coords for weather and bin collection APIs.",
+      "_comment_3": "If denied: allow postcode entry as fallback.",
+      "_comment_4": "If offline: mark as api_lookup_pending and retry on connectivity.",
+
+      "id": "location_permission",
+      "sequence_position": 4,
+      "type": "permission_with_fallback",
+      "_comment_type": "Custom widget: shows permission request with fallback input field.",
+
+      "title_key": "setup_wizard.q4.title",
+      "explanation_key": "setup_wizard.q4.explanation",
+      "_comment_example_title": "Help us find your local services",
+      "_comment_example_explanation": "We use your location to find your bin collection days and give you local weather updates before you leave for work.",
+
+      "illustration_asset": "assets/illustrations/location_map.svg",
+
+      "permission_request": {
+        "type": "location",
+        "rationale_key": "setup_wizard.q4.location_rationale",
+        "_comment_rationale": "Explanation shown before OS permission dialog appears.",
+        "grant_label_key": "setup_wizard.q4.allow_location",
+        "deny_label_key": "setup_wizard.q4.enter_postcode_instead"
+      },
+
+      "postcode_fallback": {
+        "_comment": "Shown if user denies location permission.",
+        "enabled": true,
+        "label_key": "setup_wizard.q4.postcode_label",
+        "placeholder_key": "setup_wizard.q4.postcode_placeholder",
+        "validation": {
+          "format": "uk_postcode",
+          "_comment_format": "UK postcode validation. e.g. SW1A 1AA, M1 1AE, EC1A 1BB.",
+          "error_key": "setup_wizard.q4.postcode_invalid"
+        },
+        "storage_key": "user_preferences.postcode"
+      },
+
+      "api_triggers": [
+        {
+          "api": "bin_collection",
+          "_comment": "Triggered after location/postcode is obtained.",
+          "trigger_on": "location_or_postcode_obtained",
+          "online_behaviour": "call_immediately",
+          "offline_behaviour": {
+            "action": "queue_as_pending",
+            "pending_type": "bin_collection_lookup",
+            "retry_on": ["app_open", "connectivity_restored"]
+          },
+          "result_behaviour": "smart_task_confirmation_screen",
+          "_comment_result": "API result shown on Smart Task Confirmation screen. User reviews and confirms before tasks created."
+        },
+        {
+          "api": "weather",
+          "_comment": "Location stored for daily weather notification — not triggered here as a task creation API.",
+          "trigger_on": "location_or_postcode_obtained",
+          "online_behaviour": "store_for_later_use",
+          "_comment_store": "Weather API is called daily at notification time, not during setup wizard."
+        }
+      ],
+
+      "storage_keys_summary": {
+        "keys": [
+          "user_preferences.location_permission_granted",
+          "user_preferences.location_coords",
+          "user_preferences.postcode"
+        ]
+      },
+
+      "skip_behaviour": {
+        "on_skip": "store_permission_denied",
+        "_comment": "Mark location as not available. Weather notification gracefully suppressed. Bin tasks not created."
+      }
+    },
+
+    "vehicle_details": {
+      "_comment": "Question 5 — Capture vehicles owned for MOT, road tax reminders via DVLA API.",
+      "_comment_2": "Cars and motorbikes require reg plate entry for DVLA lookup.",
+      "_comment_3": "Cycles get a configurable periodic service reminder — no reg needed.",
+      "_comment_4": "DVLA results shown on Smart Task Confirmation screen before tasks are created.",
+
+      "id": "vehicle_details",
+      "sequence_position": 5,
+      "type": "vehicle_entry_group",
+      "_comment_type": "Custom widget: shows vehicle type selector then dynamic reg plate inputs per vehicle.",
+
+      "title_key": "setup_wizard.q5.title",
+      "explanation_key": "setup_wizard.q5.explanation",
+      "_comment_example_title": "Tell us about your vehicles",
+      "_comment_example_explanation": "We'll set up MOT and road tax reminders automatically using the DVLA database.",
+
+      "illustration_asset": "assets/illustrations/vehicle_garage.svg",
+
+      "vehicle_types_source": "ui-global-config.vehicle.types",
+      "_comment_source": "Vehicle types (car, motorbike, cycle) loaded from ui-global-config.json.",
+
+      "vehicle_type_labels_source": "ui-global-config.vehicle.type_label_keys",
+      "vehicle_type_icons_source": "ui-global-config.vehicle.type_icons",
+
+      "vehicle_count": {
+        "_comment": "For each vehicle type, user selects how many they own.",
+        "min": 0,
+        "max_source": "ui-global-config.vehicle.max_vehicles_per_type",
+        "_comment_max": "Max vehicles per type loaded from config — currently 5.",
+        "count_label_key": "setup_wizard.q5.vehicle_count_label"
+      },
+
+      "reg_plate_entry": {
+        "_comment": "Shown for each car and motorbike entered.",
+        "required_for_source": "ui-global-config.vehicle.reg_required_for",
+        "_comment_required": "Only required for car and motorbike — from ui-global-config.json.",
+        "label_key": "setup_wizard.q5.reg_plate_label",
+        "placeholder_key": "setup_wizard.q5.reg_plate_placeholder",
+        "helper_key": "setup_wizard.q5.reg_plate_helper",
+        "_comment_example_helper": "e.g. 'AB12 CDE' — we'll look up your MOT and tax details automatically.",
+        "validation": {
+          "format": "uk_vehicle_reg",
+          "_comment_format": "UK vehicle registration format validation.",
+          "error_key": "setup_wizard.q5.reg_plate_invalid",
+          "optional": true,
+          "_comment_optional": "Reg plate is optional — user can skip individual vehicles."
+        }
+      },
+
+      "cycle_service_reminder": {
+        "_comment": "For cycles — no reg, just offer a periodic service reminder.",
+        "enabled": true,
+        "offer_label_key": "setup_wizard.q5.cycle_service_offer",
+        "_comment_example": "e.g. 'Would you like a yearly bike service reminder?'",
+        "interval_source": "ui-global-config.vehicle.cycle_service_interval_months",
+        "task_config_id_source": "ui-global-config.vehicle.cycle_service_task_key"
+      },
+
+      "api_triggers": [
+        {
+          "api": "dvla",
+          "trigger_on": "reg_plate_entered_and_next_tapped",
+          "_comment_trigger": "DVLA call fires as soon as user provides a reg plate and taps Next.",
+          "online_behaviour": "call_immediately",
+          "offline_behaviour": {
+            "action": "queue_as_pending",
+            "pending_type": "dvla_lookup",
+            "pending_payload_fields": ["reg_plate", "vehicle_type"],
+            "retry_on": ["app_open", "connectivity_restored"]
+          },
+          "result_behaviour": "smart_task_confirmation_screen",
+          "_comment_result": "DVLA response shown on Smart Task Confirmation screen. User reviews and confirms."
+        }
+      ],
+
+      "storage_keys_summary": {
+        "keys": [
+          "user_preferences.vehicles"
+        ],
+        "_comment_vehicles": "Stored as array of vehicle objects: [{type, count, reg_plates: [], dvla_fetched: bool}]."
+      },
+
+      "skip_behaviour": {
+        "on_skip": "store_empty_vehicles",
+        "_comment": "No vehicles stored. No DVLA API called. No vehicle tasks created."
+      }
+    },
+
+    "pet_details": {
+      "_comment": "Question 6 — Capture pet ownership to filter task categories and personalise task names.",
+      "_comment_2": "Pet types loaded from pets-config.json.",
+      "_comment_3": "Selected pets show/hide relevant task categories across the app.",
+      "_comment_4": "Pet name is optional but enables personalised notification messages.",
+
+      "id": "pet_details",
+      "sequence_position": 6,
+      "type": "pet_selector_with_name",
+      "_comment_type": "Custom widget: shows pet type cards (from pets-config.json), then optional name input per pet.",
+
+      "title_key": "setup_wizard.q6.title",
+      "explanation_key": "setup_wizard.q6.explanation",
+      "_comment_example_title": "Do you have any pets?",
+      "_comment_example_explanation": "We'll show you tasks relevant to your pets and can even personalise reminders with their name.",
+
+      "illustration_asset": "assets/illustrations/pets_happy.svg",
+
+      "pet_options_source": "pets-config.json",
+      "_comment_source": "All pet types, icons, and category visibility rules loaded from pets-config.json.",
+
+      "multi_select": true,
+      "_comment_multi": "User can select multiple pet types — many households have more than one type of pet.",
+
+      "pet_name_entry": {
+        "_comment": "After selecting a pet type, user can optionally enter a name.",
+        "enabled": true,
+        "label_key": "setup_wizard.q6.pet_name_label",
+        "placeholder_key": "setup_wizard.q6.pet_name_placeholder",
+        "_comment_example_placeholder": "e.g. Buddy, Whiskers — optional",
+        "optional": true,
+        "max_length": 30,
+        "max_names_per_type": 3,
+        "_comment_max_names": "User can name up to 3 pets of the same type e.g. 3 cats."
+      },
+
+      "category_visibility": {
+        "_comment": "Selected pets drive which task categories are shown/hidden across the app.",
+        "rules_source": "pets-config.json category_visibility_rules",
+        "_comment_rules": "Rules defined in pets-config.json. Applied immediately after wizard completion.",
+        "apply_on": "wizard_completion"
+      },
+
+      "storage_keys_summary": {
+        "keys": [
+          "user_preferences.pets"
+        ],
+        "_comment_pets": "Stored as array of pet objects: [{type_id, names: ['Buddy'], category_ids_unlocked: [...]}]."
+      },
+
+      "skip_behaviour": {
+        "on_skip": "store_no_pets",
+        "_comment": "No pets stored. Pet-specific task categories remain hidden."
+      }
+    }
+  },
+
+  "pending_api_lookups": {
+    "_comment": "Configuration for the pending API lookup queue — used when wizard API calls cannot complete offline.",
+    "_comment_2": "Managed by PendingApiLookupService. Details in api-global-config.json api.pending_api_queue.",
+
+    "isar_collection": "PendingApiLookup",
+    "retry_triggers": ["app_open", "connectivity_restored"],
+
+    "user_confirmation_screen": "smart_task_confirmation",
+    "_comment_confirm": "When a pending lookup resolves, results are shown on Smart Task Confirmation screen.",
+    "confirmation_message_key": "pending_lookup.resolved_message",
+    "_comment_example": "e.g. 'We found some tasks for you while you were offline. Would you like to add them?'"
+  },
+
+  "extensibility": {
+    "_comment": "How to add new setup wizard questions in future without code changes.",
+    "_comment_2": "Step 1: Add a new question object to the 'questions' section above.",
+    "_comment_3": "Step 2: Add its 'id' to the 'wizard.sequence' array in the desired position.",
+    "_comment_4": "Step 3: Add i18n keys to all language ARB files.",
+    "_comment_5": "Step 4: If a new widget 'type' is needed, implement it in SetupWizardQuestionFactory.",
+    "_comment_6": "Step 5: Add storage_key handling in UserPreferencesRepository.",
+    "question_types_supported": [
+      "time_picker_group",
+      "multi_select_cards",
+      "multi_select_chips_with_custom",
+      "permission_with_fallback",
+      "vehicle_entry_group",
+      "pet_selector_with_name",
+      "single_select_cards",
+      "text_input",
+      "number_input",
+      "toggle_group"
+    ],
+    "_comment_types": "Supported question types. New types require widget implementation in SetupWizardQuestionFactory."
+  }
+}

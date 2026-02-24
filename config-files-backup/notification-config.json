@@ -1,0 +1,763 @@
+{
+  "_metadata": {
+    "_comment": "notification-config.json — Message templates, motivation pools, and dynamic placeholder definitions for all notification types.",
+    "_comment_2": "IMPORTANT DISTINCTION: notification-global-config.json controls WHEN and HOW notifications fire.",
+    "_comment_3": "THIS file controls WHAT notifications say — titles, body templates, message pools.",
+    "_comment_4": "All user-facing string values are i18n keys. Never raw strings.",
+    "_comment_5": "Dynamic placeholders use {placeholder_name} syntax in templates.",
+    "_comment_6": "Placeholder values are resolved at runtime by NotificationTemplateResolver service.",
+    "_comment_7": "Each notification type has: title_key, body_template_key, placeholders, and where applicable a message_pool.",
+    "_comment_8": "Message pools are arrays of i18n keys. One is selected randomly unless rotation_strategy overrides.",
+    "_comment_9": "Templates and pools are extended in language ARB files — this file holds the keys, ARB files hold the text.",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "product"
+  },
+
+  "template_engine": {
+    "_comment": "Configuration for the NotificationTemplateResolver service.",
+    "_comment_2": "This service is responsible for resolving i18n keys, substituting placeholders, and selecting from pools.",
+
+    "placeholder_syntax": "{placeholder_name}",
+    "_comment_syntax": "Placeholders in templates use curly brace syntax. e.g. 'Time for your {task_name}'.",
+
+    "missing_placeholder_behaviour": "remove",
+    "_comment_missing": "Options: 'remove' | 'keep_raw' | 'substitute_empty'. 'remove' cleanly removes unresolved placeholders.",
+
+    "missing_key_behaviour": "fallback_to_english",
+    "_comment_key": "If an i18n key is missing in active language, fall back to English ARB value.",
+
+    "pool_rotation_strategy": "random",
+    "_comment_rotation": "Options: 'random' | 'sequential' | 'weighted'. Random avoids repetition feeling predictable.",
+
+    "pool_repeat_prevention": true,
+    "_comment_repeat": "Track last N used pool items in user_preferences to avoid showing same message consecutively.",
+    "pool_repeat_prevention_count": 3,
+    "_comment_count": "Prevent the last 3 used pool messages from being selected again."
+  },
+
+  "placeholders": {
+    "_comment": "Master reference of all available placeholders and their runtime resolution sources.",
+    "_comment_2": "NotificationTemplateResolver reads this to know where to fetch each placeholder value.",
+
+    "task_name": {
+      "source": "task.name",
+      "_comment": "The app task name from master-tasks-config.json."
+    },
+    "task_custom_title": {
+      "source": "saved_task.custom_title",
+      "_comment": "User-defined custom title for the task. May be null."
+    },
+    "task_display_name": {
+      "source": "resolved",
+      "_comment": "Resolved display name: custom_title if set, else task_name. Used in most templates."
+    },
+    "task_time": {
+      "source": "saved_task.scheduled_time",
+      "_comment": "Scheduled time of the task. Formatted per active language time format."
+    },
+    "task_times_list": {
+      "source": "saved_task.scheduled_times_grouped",
+      "_comment": "For multi-time tasks: formatted as '09:00, 13:00, 18:00'."
+    },
+    "task_date": {
+      "source": "saved_task.scheduled_date",
+      "_comment": "Scheduled date. Formatted per active language date format."
+    },
+    "user_name": {
+      "source": "user_preferences.display_name",
+      "_comment": "User's display name if set. Falls back to empty string gracefully."
+    },
+    "points_balance": {
+      "source": "points_audit_log.current_balance",
+      "_comment": "User's current points balance computed from audit log."
+    },
+    "points_to_next_milestone": {
+      "source": "points_audit_log.points_to_next_milestone",
+      "_comment": "Points needed to reach the next premium threshold."
+    },
+    "next_milestone_points": {
+      "source": "points_global_config.next_milestone_threshold",
+      "_comment": "The actual points number of the next milestone e.g. 300."
+    },
+    "next_milestone_months": {
+      "source": "points_global_config.next_milestone_premium_months",
+      "_comment": "Premium months awarded at next milestone e.g. 3."
+    },
+    "missed_task_count": {
+      "source": "task_log.todays_missed_count",
+      "_comment": "Number of missed tasks today."
+    },
+    "completed_task_count": {
+      "source": "task_log.todays_completed_count",
+      "_comment": "Number of completed tasks today."
+    },
+    "total_tasks_today": {
+      "source": "task_log.todays_total_count",
+      "_comment": "Total tasks scheduled for today."
+    },
+    "tomorrow_task_count": {
+      "source": "task_log.tomorrows_total_count",
+      "_comment": "Total tasks scheduled for tomorrow."
+    },
+    "snooze_until_time": {
+      "source": "snooze.new_scheduled_time",
+      "_comment": "The time a snoozed task will next fire."
+    },
+    "weather_condition": {
+      "source": "weather_cache.primary_condition",
+      "_comment": "Primary weather condition from last API response e.g. 'rain', 'sunny', 'cloudy'."
+    },
+    "weather_temperature": {
+      "source": "weather_cache.temperature_celsius",
+      "_comment": "Current temperature in Celsius from last API response."
+    },
+    "pollen_level": {
+      "source": "weather_cache.pollen_level",
+      "_comment": "Pollen level from last API response e.g. 'high', 'very_high'."
+    },
+    "uv_index": {
+      "source": "weather_cache.uv_index",
+      "_comment": "UV index from last API response."
+    },
+    "vehicle_make": {
+      "source": "dvla_response.make",
+      "_comment": "Vehicle make from DVLA response e.g. 'Ford', 'Toyota'."
+    },
+    "vehicle_reg": {
+      "source": "saved_vehicle.reg_plate",
+      "_comment": "Vehicle registration plate."
+    },
+    "mot_expiry_date": {
+      "source": "dvla_response.motExpiryDate",
+      "_comment": "MOT expiry date from DVLA response."
+    },
+    "tax_due_date": {
+      "source": "dvla_response.taxDueDate",
+      "_comment": "Road tax due date from DVLA response."
+    },
+    "streak_days": {
+      "source": "points_audit_log.current_streak_days",
+      "_comment": "Consecutive days with at least one task completion. Reserved for future streak feature."
+    }
+  },
+
+  "notifications": {
+
+    "task_reminder": {
+      "_comment": "Standard task reminder notification — fires at scheduled task time (minus remind-me offset).",
+      "_comment_2": "Message resolution order: task_custom_message → user_custom_title + task_name → task_name_only.",
+
+      "title": {
+        "key": "notification.task_reminder.title",
+        "_comment": "i18n key for notification title. e.g. 'Task Reminder' or app name.",
+        "placeholders": ["task_display_name"]
+      },
+
+      "body": {
+        "templates": {
+          "with_custom_message": {
+            "key": "notification.task_reminder.body.custom_message",
+            "_comment": "Used when task has a custom notification message in master-tasks-config.json.",
+            "placeholders": ["task_time"]
+          },
+          "with_custom_title": {
+            "key": "notification.task_reminder.body.custom_title",
+            "_comment": "Used when user has set a custom task title but no custom message exists.",
+            "example_resolved": "Time for Bedroom Laundry (Laundry) at 09:00",
+            "placeholders": ["task_custom_title", "task_name", "task_time"]
+          },
+          "task_name_only": {
+            "key": "notification.task_reminder.body.task_name_only",
+            "_comment": "Fallback. Used when no custom message and no custom title.",
+            "example_resolved": "Time for Laundry at 09:00",
+            "placeholders": ["task_name", "task_time"]
+          }
+        },
+        "resolution_order": [
+          "with_custom_message",
+          "with_custom_title",
+          "task_name_only"
+        ]
+      },
+
+      "action_buttons": [
+        {
+          "id": "complete",
+          "label_key": "notification.action.complete",
+          "action": "CompleteTaskCommand"
+        },
+        {
+          "id": "snooze",
+          "label_key": "notification.action.snooze",
+          "action": "SnoozeTaskCommand"
+        }
+      ],
+      "_comment_actions": "Notification action buttons allow task completion/snooze without opening app."
+    },
+
+    "missed_task": {
+      "_comment": "Notification fired when task time passes without completion.",
+      "_comment_2": "Fires at intervals configured in notification-global-config.json: 10m, 30m, 2h.",
+
+      "title": {
+        "key": "notification.missed_task.title",
+        "example_resolved": "Missed Task",
+        "placeholders": []
+      },
+
+      "body": {
+        "templates": {
+          "first_reminder": {
+            "key": "notification.missed_task.body.first",
+            "_comment": "Fired at 10 minutes after missed time.",
+            "example_resolved": "You missed Laundry at 09:00 — still time to do it!",
+            "placeholders": ["task_display_name", "task_time"]
+          },
+          "second_reminder": {
+            "key": "notification.missed_task.body.second",
+            "_comment": "Fired at 30 minutes after missed time.",
+            "example_resolved": "Laundry from 09:00 is still waiting for you.",
+            "placeholders": ["task_display_name", "task_time"]
+          },
+          "final_reminder": {
+            "key": "notification.missed_task.body.final",
+            "_comment": "Fired at 2 hours after missed time.",
+            "example_resolved": "Last chance — Laundry has been waiting since 09:00.",
+            "placeholders": ["task_display_name", "task_time"]
+          }
+        },
+        "template_per_interval": {
+          "0": "first_reminder",
+          "1": "second_reminder",
+          "2": "final_reminder"
+        },
+        "_comment_interval": "Key = interval index matching delay_intervals_minutes array in notification-global-config.json."
+      },
+
+      "action_buttons": [
+        {
+          "id": "complete",
+          "label_key": "notification.action.complete",
+          "action": "CompleteTaskCommand"
+        },
+        {
+          "id": "skip",
+          "label_key": "notification.action.skip",
+          "action": "SkipTaskCommand"
+        }
+      ]
+    },
+
+    "morning_summary": {
+      "_comment": "Daily morning summary — fires 60 minutes after wake-up time.",
+      "_comment_2": "Includes motivational message + today's tasks. Multi-time tasks grouped.",
+
+      "title": {
+        "key": "notification.morning_summary.title",
+        "example_resolved": "Good Morning! Here's your day 🌅",
+        "placeholders": []
+      },
+
+      "body": {
+        "template_key": "notification.morning_summary.body",
+        "_comment": "Full body template in ARB file. Combines motivation + task list.",
+        "example_resolved": "You've got 5 tasks today. Let's make it count!\n• Medication — 09:00, 13:00, 18:00\n• Laundry — 10:00\n• Car wash — 14:00",
+        "placeholders": [
+          "motivation_message",
+          "total_tasks_today",
+          "task_list_formatted"
+        ]
+      },
+
+      "motivation_pool": {
+        "_comment": "Array of i18n keys for motivational messages. One selected randomly per day.",
+        "_comment_2": "Add new messages by adding keys here and translations in each ARB file.",
+        "_comment_3": "pool_repeat_prevention in template_engine prevents the same message appearing consecutively.",
+        "keys": [
+          "notification.morning_summary.motivation.01",
+          "notification.morning_summary.motivation.02",
+          "notification.morning_summary.motivation.03",
+          "notification.morning_summary.motivation.04",
+          "notification.morning_summary.motivation.05",
+          "notification.morning_summary.motivation.06",
+          "notification.morning_summary.motivation.07",
+          "notification.morning_summary.motivation.08",
+          "notification.morning_summary.motivation.09",
+          "notification.morning_summary.motivation.10",
+          "notification.morning_summary.motivation.11",
+          "notification.morning_summary.motivation.12",
+          "notification.morning_summary.motivation.13",
+          "notification.morning_summary.motivation.14",
+          "notification.morning_summary.motivation.15"
+        ],
+        "example_english_values": [
+          "Small steps every day lead to big results. Let's go!",
+          "A productive day starts with the first task. You've got this.",
+          "Every task you complete is a win. Make today count!",
+          "Your future self will thank you for today's effort.",
+          "One task at a time. You're more capable than you think.",
+          "Today is a fresh start. Let's make the most of it.",
+          "Consistency beats perfection every time. Keep going!",
+          "Great things happen when you show up every day.",
+          "The secret to getting ahead is getting started.",
+          "You did it yesterday. You can do it today too.",
+          "Progress, not perfection. Every task matters.",
+          "A little effort today saves a lot of stress tomorrow.",
+          "You're building great habits, one task at a time.",
+          "Another day, another chance to be brilliant.",
+          "Your tasks won't complete themselves — but you can!"
+        ],
+        "_comment_examples": "Example values shown here for reference. Actual values live in app_en.arb and language ARB files."
+      },
+
+      "task_list_format": {
+        "_comment": "How today's tasks are formatted in the morning summary body.",
+        "single_time_template_key": "notification.morning_summary.task_single",
+        "_comment_single": "e.g. '• Laundry — 10:00'",
+        "multi_time_template_key": "notification.morning_summary.task_multi",
+        "_comment_multi": "e.g. '• Medication — 09:00, 13:00, 18:00'",
+        "time_separator": ", ",
+        "task_bullet": "•",
+        "max_tasks_in_notification": 5,
+        "_comment_max": "Show max 5 tasks in notification body. 'and X more...' appended if more exist.",
+        "overflow_label_key": "notification.morning_summary.overflow"
+      },
+
+      "missed_tasks_section": {
+        "_comment": "Section appended to morning summary when overnight missed tasks are suppressed.",
+        "title_key": "notification.morning_summary.missed_section_title",
+        "example_resolved": "Missed yesterday: Medication 22:00",
+        "placeholders": ["missed_task_count"]
+      },
+
+      "like_dislike": {
+        "enabled": true,
+        "like_action": "notification.like",
+        "dislike_action": "notification.dislike",
+        "_comment": "Dislike triggers auto-disable of morning_summary in user_preferences.notifications."
+      }
+    },
+
+    "weather_summary": {
+      "_comment": "Daily weather notification — fires 30 minutes before job start time.",
+      "_comment_2": "Only fires if location permission granted or postcode saved.",
+      "_comment_3": "Content varies based on weather conditions detected.",
+
+      "title": {
+        "key": "notification.weather_summary.title",
+        "example_resolved": "Before you head out 🌤",
+        "placeholders": []
+      },
+
+      "condition_templates": {
+        "_comment": "A template is selected for each detected condition. Multiple conditions can combine.",
+
+        "rain": {
+          "key": "notification.weather.rain",
+          "example_resolved": "Rain expected today — don't forget your umbrella! ☂️",
+          "placeholders": ["weather_temperature"],
+          "emoji": "☂️"
+        },
+
+        "high_uv": {
+          "key": "notification.weather.high_uv",
+          "example_resolved": "UV index is high today ({uv_index}). Apply sunscreen before heading out. ☀️",
+          "placeholders": ["uv_index"],
+          "emoji": "☀️"
+        },
+
+        "high_pollen": {
+          "key": "notification.weather.high_pollen",
+          "example_resolved": "Pollen count is high today. Consider taking antihistamines. 🌿",
+          "placeholders": ["pollen_level"],
+          "emoji": "🌿"
+        },
+
+        "no_alerts": {
+          "key": "notification.weather_summary.no_alert",
+          "example_resolved": "All clear today! Have a great day at work. 😊",
+          "placeholders": ["weather_temperature"],
+          "emoji": "😊"
+        }
+      },
+
+      "combination_template": {
+        "_comment": "Used when multiple conditions are active simultaneously.",
+        "key": "notification.weather_summary.combination",
+        "example_resolved": "Heads up: Rain likely and high pollen today. Umbrella and antihistamines recommended. ☂️🌿",
+        "max_conditions_combined": 3
+      },
+
+      "api_error_template": {
+        "_comment": "Shown in message centre if weather API failed and no cache available.",
+        "key": "notification.weather_summary.api_error",
+        "example_resolved": "Weather info unavailable right now. Check your local forecast."
+      },
+
+      "like_dislike": {
+        "enabled": true,
+        "like_action": "notification.like",
+        "dislike_action": "notification.dislike"
+      }
+    },
+
+    "evening_summary": {
+      "_comment": "Daily evening summary — fires 60 minutes before sleep time.",
+      "_comment_2": "Includes today's missed tasks and tomorrow's upcoming tasks.",
+
+      "title": {
+        "key": "notification.evening_summary.title",
+        "example_resolved": "Evening Wrap-Up 🌙",
+        "placeholders": []
+      },
+
+      "body": {
+        "template_key": "notification.evening_summary.body",
+        "example_resolved": "Today: 4 of 5 tasks done — great work! 🎉\nMissed: Laundry 14:00\n\nTomorrow:\n• Medication — 09:00, 13:00, 18:00\n• Bin day — 07:00",
+        "placeholders": [
+          "completed_task_count",
+          "total_tasks_today",
+          "missed_task_count",
+          "tomorrow_task_count",
+          "missed_task_list_formatted",
+          "tomorrow_task_list_formatted"
+        ]
+      },
+
+      "performance_messages": {
+        "_comment": "Message selected based on completion rate. Gives personalised feel.",
+        "all_complete": {
+          "key": "notification.evening_summary.performance.all_complete",
+          "example_resolved": "Perfect day — all tasks done! 🏆",
+          "threshold_percent": 100
+        },
+        "most_complete": {
+          "key": "notification.evening_summary.performance.most_complete",
+          "example_resolved": "Great effort today! Almost there. 💪",
+          "threshold_percent": 75
+        },
+        "some_complete": {
+          "key": "notification.evening_summary.performance.some_complete",
+          "example_resolved": "Good start — let's aim for more tomorrow. 👍",
+          "threshold_percent": 40
+        },
+        "few_complete": {
+          "key": "notification.evening_summary.performance.few_complete",
+          "example_resolved": "Tomorrow is a fresh chance. You've got this! 🌟",
+          "threshold_percent": 0
+        }
+      },
+      "_comment_performance": "Performance message is inserted into evening body template based on today's completion percentage.",
+
+      "task_list_format": {
+        "_comment": "Same format rules as morning summary task list.",
+        "single_time_template_key": "notification.evening_summary.task_single",
+        "multi_time_template_key": "notification.evening_summary.task_multi",
+        "time_separator": ", ",
+        "task_bullet": "•",
+        "max_tasks_in_notification": 5,
+        "overflow_label_key": "notification.evening_summary.overflow"
+      },
+
+      "like_dislike": {
+        "enabled": true,
+        "like_action": "notification.like",
+        "dislike_action": "notification.dislike"
+      }
+    },
+
+    "point_milestone": {
+      "_comment": "Weekly points milestone notification — fires on configured weekday at 18:00.",
+      "_comment_2": "If new milestone reached: milestone message. If not: encouragement message.",
+
+      "title": {
+        "key": "notification.point_milestone.title",
+        "example_resolved": "Your Weekly Points Update 🏅",
+        "placeholders": []
+      },
+
+      "milestone_reached": {
+        "_comment": "Used when user has crossed a new milestone threshold this week.",
+        "key": "notification.point_milestone.milestone",
+        "example_resolved": "Amazing! You've earned 300 points — you've unlocked 3 months of free Premium! 🎉 Claim it now.",
+        "placeholders": ["points_balance", "next_milestone_months"],
+        "action_button": {
+          "id": "claim_premium",
+          "label_key": "notification.point_milestone.claim_cta",
+          "action": "ClaimMilestoneCommand"
+        }
+      },
+
+      "encouragement": {
+        "_comment": "Used when no new milestone reached this week. Selected from pool.",
+        "pool": {
+          "keys": [
+            "notification.point_milestone.encouragement.01",
+            "notification.point_milestone.encouragement.02",
+            "notification.point_milestone.encouragement.03",
+            "notification.point_milestone.encouragement.04",
+            "notification.point_milestone.encouragement.05",
+            "notification.point_milestone.encouragement.06",
+            "notification.point_milestone.encouragement.07",
+            "notification.point_milestone.encouragement.08"
+          ],
+          "example_english_values": [
+            "You've earned {points_balance} points — just {points_to_next_milestone} more for {next_milestone_months} months free! Keep it up! 💪",
+            "You're {points_to_next_milestone} points away from free Premium. Every task counts! 🎯",
+            "Great consistency this week! {points_balance} points earned so far. Premium is within reach. 🏅",
+            "You're building an amazing habit. {points_to_next_milestone} points to go! 🌟",
+            "Every task is a step closer to free Premium. You've got {points_balance} points! 🔥",
+            "Keep going — {points_balance} points and counting! {points_to_next_milestone} to unlock Premium. ⚡",
+            "Your dedication is paying off! {points_to_next_milestone} points left for free Premium. 💎",
+            "This week was great! {points_balance} total points. Premium is just around the corner. 🎉"
+          ]
+        },
+        "placeholders_used": [
+          "points_balance",
+          "points_to_next_milestone",
+          "next_milestone_months"
+        ]
+      },
+
+      "like_dislike": {
+        "enabled": true,
+        "like_action": "notification.like",
+        "dislike_action": "notification.dislike"
+      }
+    },
+
+    "auth_nudge": {
+      "_comment": "Non-blocking bottom sheet shown after guest user creates their 5th task.",
+      "_comment_2": "Not a push notification — rendered as an in-app bottom sheet component.",
+
+      "title": {
+        "key": "auth.nudge.title",
+        "example_resolved": "Back up your progress"
+      },
+
+      "body": {
+        "key": "auth.nudge.message",
+        "example_resolved": "You've created 5 tasks — sign in to keep them safe and sync across devices.",
+        "placeholders": []
+      },
+
+      "cta": {
+        "key": "auth.nudge.cta",
+        "example_resolved": "Sign in — it takes 10 seconds"
+      },
+
+      "dismiss_label_key": "auth.nudge.dismiss",
+      "include_in_message_centre": false,
+      "_comment_centre": "Auth nudge is an in-app UI element, not a message centre item."
+    },
+
+    "push_task": {
+      "_comment": "Notification received when server pushes a new task to the user's device.",
+
+      "system_notification": {
+        "_comment": "Shown when app is in background/killed.",
+        "title": {
+          "key": "push_task.system_notification.title",
+          "example_resolved": "New task for you!",
+          "placeholders": []
+        },
+        "body": {
+          "key": "push_task.system_notification.body",
+          "example_resolved": "Tap to review and schedule: Car MOT Reminder",
+          "placeholders": ["task_name"]
+        }
+      },
+
+      "in_app_popup": {
+        "_comment": "Shown as a popup dialog when app is open and push task arrives.",
+        "title": {
+          "key": "push_task.popup_title",
+          "example_resolved": "New Task Suggested",
+          "placeholders": []
+        },
+        "body": {
+          "key": "push_task.popup_body",
+          "example_resolved": "We've found a task you might want to schedule: Car MOT Reminder. Would you like to add it?",
+          "placeholders": ["task_name"]
+        },
+        "accept_label_key": "push_task.accept",
+        "reject_label_key": "push_task.reject"
+      }
+    },
+
+    "api_task_suggestion": {
+      "_comment": "Message centre item created when an API lookup (DVLA, bin, GP) resolves successfully.",
+
+      "dvla": {
+        "title": {
+          "key": "notification.api_suggestion.dvla.title",
+          "example_resolved": "Tasks found for your Ford (AB12 CDE)",
+          "placeholders": ["vehicle_make", "vehicle_reg"]
+        },
+        "body": {
+          "key": "notification.api_suggestion.dvla.body",
+          "example_resolved": "MOT due 15 Mar 2026 and Road Tax due 01 Apr 2026. Tap to review and schedule reminders.",
+          "placeholders": ["mot_expiry_date", "tax_due_date"]
+        }
+      },
+
+      "bin_collection": {
+        "title": {
+          "key": "notification.api_suggestion.bin.title",
+          "example_resolved": "Bin collection days found",
+          "placeholders": []
+        },
+        "body": {
+          "key": "notification.api_suggestion.bin.body",
+          "example_resolved": "We found your bin collection schedule. Tap to add reminders.",
+          "placeholders": []
+        }
+      },
+
+      "gp_appointment": {
+        "_comment": "Future — stub for GP appointment API suggestion.",
+        "title": {
+          "key": "notification.api_suggestion.gp.title",
+          "example_resolved": "GP appointment found",
+          "placeholders": []
+        },
+        "body": {
+          "key": "notification.api_suggestion.gp.body",
+          "example_resolved": "Tap to schedule a reminder for your GP appointment.",
+          "placeholders": []
+        }
+      }
+    }
+  },
+
+  "task_history_summary": {
+    "_comment": "1-2 line motivational summary shown at top of task history screen.",
+    "_comment_2": "Selected based on user's overall completion rate across history.",
+
+    "performance_bands": {
+      "excellent": {
+        "threshold_percent": 90,
+        "pool": {
+          "keys": [
+            "history.summary.excellent.01",
+            "history.summary.excellent.02",
+            "history.summary.excellent.03"
+          ],
+          "example_english_values": [
+            "Outstanding! You're completing over 90% of your tasks. Keep it up! 🏆",
+            "You're a productivity powerhouse! Exceptional consistency. 🌟",
+            "Top performer! Your dedication is truly impressive. 🎯"
+          ]
+        }
+      },
+      "good": {
+        "threshold_percent": 70,
+        "pool": {
+          "keys": [
+            "history.summary.good.01",
+            "history.summary.good.02",
+            "history.summary.good.03"
+          ],
+          "example_english_values": [
+            "Great work! You're completing most of your tasks consistently. 💪",
+            "Solid performance! A little push and you'll be at the top. 🎯",
+            "You're doing really well. Keep building on this momentum! 🔥"
+          ]
+        }
+      },
+      "average": {
+        "threshold_percent": 50,
+        "pool": {
+          "keys": [
+            "history.summary.average.01",
+            "history.summary.average.02",
+            "history.summary.average.03"
+          ],
+          "example_english_values": [
+            "Good progress! There's room to grow — you can do it! 👍",
+            "You're getting there. A few more tasks each day will make a big difference. 🌱",
+            "Halfway there! Small improvements every day lead to big results. ⚡"
+          ]
+        }
+      },
+      "needs_improvement": {
+        "threshold_percent": 0,
+        "pool": {
+          "keys": [
+            "history.summary.needs_improvement.01",
+            "history.summary.needs_improvement.02",
+            "history.summary.needs_improvement.03"
+          ],
+          "example_english_values": [
+            "Every day is a fresh start. Let's make today count! 🌅",
+            "Don't worry — habits take time. You've got this! 🌟",
+            "Tomorrow is your chance to shine. One task at a time! 💫"
+          ]
+        }
+      }
+    }
+  },
+
+  "like_dislike": {
+    "_comment": "Global configuration for the like/dislike feature on non-task notifications.",
+
+    "like_icon": "thumb_up",
+    "dislike_icon": "thumb_down",
+    "like_label_key": "notification.like_label",
+    "dislike_label_key": "notification.dislike_label",
+
+    "dislike_confirmation": {
+      "_comment": "Shown when user taps dislike — confirms the notification type will be disabled.",
+      "enabled": true,
+      "message_key": "notification.dislike_confirmation",
+      "example_resolved": "Got it — we'll stop sending you these notifications. You can re-enable them in Preferences.",
+      "confirm_label_key": "notification.dislike_confirm",
+      "cancel_label_key": "notification.dislike_cancel"
+    },
+
+    "dislike_action": "disable_notification_type_in_preferences",
+    "_comment_action": "Disliking a notification type sets its enabled flag to false in user_preferences.notifications.",
+
+    "like_action": "record_preference_only",
+    "_comment_like": "Liking a notification records the preference for future personalisation. No other effect currently."
+  },
+
+  "notification_actions": {
+    "_comment": "Shared action button definitions referenced by notification templates above.",
+
+    "complete": {
+      "id": "complete",
+      "label_key": "notification.action.complete",
+      "command": "CompleteTaskCommand",
+      "foreground": false,
+      "_comment_foreground": "false = action handled in background without opening app."
+    },
+    "snooze_5m": {
+      "id": "snooze_5m",
+      "label_key": "notification.action.snooze_5m",
+      "command": "SnoozeTaskCommand",
+      "payload": { "duration_minutes": 5 },
+      "foreground": false
+    },
+    "skip": {
+      "id": "skip",
+      "label_key": "notification.action.skip",
+      "command": "SkipTaskCommand",
+      "foreground": false
+    },
+    "view_task": {
+      "id": "view_task",
+      "label_key": "notification.action.view",
+      "command": "OpenScheduleScreenCommand",
+      "foreground": true,
+      "_comment_foreground": "true = brings app to foreground."
+    },
+    "claim_premium": {
+      "id": "claim_premium",
+      "label_key": "notification.point_milestone.claim_cta",
+      "command": "ClaimMilestoneCommand",
+      "foreground": true
+    }
+  }
+}
