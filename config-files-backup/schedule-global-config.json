@@ -1,0 +1,273 @@
+{
+  "_metadata": {
+    "_comment": "schedule-global-config.json — Schedule screen behaviour, repeat options, time defaults, week days, reminders, notification channels, and timezone.",
+    "_comment_2": "Namespaces: schedule.*, repeat.*, reminder.*, day.*, time.*, timezone.*",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "product"
+  },
+
+  "schedule": {
+    "_comment": "Schedule screen global settings.",
+
+    "save_confirmation_word_key": "schedule.save_confirmation_word",
+    "_comment_save_word": "The action word in 'Scheduled <Task Name>' toast message. e.g. 'Scheduled', 'Set', 'Saved'. Comes from i18n key.",
+
+    "show_summary_section": true,
+    "_comment_summary": "Master switch for the summary section. If false, summary never renders regardless of user selections.",
+
+    "sleep_time_schedule_alert_key": "schedule.sleep_time_alert",
+    "_comment_sleep_alert": "Alert shown if user tries to schedule a task during their configured sleep window.",
+
+    "location_intersection_with_user_home": true,
+    "_comment_location": "Only render task locations that exist in BOTH master-tasks-config.json AND user's home locations from preferences. Prevents showing 'Garage' to a user who said they don't have one.",
+
+    "show_task_name_on_top": true,
+    "show_optional_custom_title": true,
+    "custom_title_placeholder_key": "schedule.custom_title_placeholder",
+
+    "prepopulate_for_edit": true,
+    "_comment_edit": "When opening schedule screen for an existing task, all fields are prepopulated from saved task.",
+
+    "save_button_label_key": "schedule.save_button",
+    "save_success_message_key": "schedule.save_success"
+  },
+
+  "repeat": {
+    "_comment": "Repeat pattern options. Shown when a task has no specific repeats in master-tasks-config.json.",
+    "_comment_2": "Each task in master-tasks-config.json defines its own allowed_repeats. If empty, use this list.",
+
+    "default_options": ["never", "daily", "weekly", "biweekly", "monthly", "quarterly", "yearly"],
+
+    "labels_keys": {
+      "never": "repeat.never",
+      "daily": "repeat.daily",
+      "weekly": "repeat.weekly",
+      "biweekly": "repeat.biweekly",
+      "monthly": "repeat.monthly",
+      "quarterly": "repeat.quarterly",
+      "yearly": "repeat.yearly"
+    },
+
+    "single_selection_only": true,
+    "_comment_single": "Users can select only one repeat pattern per task. Confirmed requirement.",
+
+    "daily": {
+      "_comment": "Daily repeat behaviour on schedule screen.",
+      "show_time_picker": true,
+      "allow_multiple_times": false,
+      "_comment_multiple": "Default. Overridden per task in master-tasks-config.json if task supports multiple times.",
+      "add_time_label_key": "repeat.daily.add_time",
+      "max_times_default": 3,
+      "_comment_max": "Default max daily times if task config does not specify. Overridden per task."
+    },
+
+    "weekly": {
+      "_comment": "Weekly repeat — day picker + time picker.",
+      "day_names_source": "schedule-global-config.week_days",
+      "_comment_source": "Never hardcode day names. Always load from week_days section below.",
+      "default_same_time_all_days": true,
+      "_comment_same": "Toggle starts in 'same time all days' mode. User can switch to per-day times.",
+      "different_times_toggle_label_key": "repeat.weekly.different_times_toggle",
+      "show_days_vertically_when_different": true,
+      "_comment_vertical": "When per-day times enabled, days shown vertically with time picker on right of each."
+    },
+
+    "biweekly": {
+      "_comment": "Bi-weekly repeat — same UI as weekly but fires every other week.",
+      "day_names_source": "schedule-global-config.week_days",
+      "default_same_time_all_days": true,
+      "different_times_toggle_label_key": "repeat.biweekly.different_times_toggle"
+    },
+
+    "monthly": {
+      "_comment": "Monthly repeat — two tab options on schedule screen.",
+      "tabs": ["first_last_day", "specific_date"],
+      "tab_labels_keys": {
+        "first_last_day": "repeat.monthly.tab.first_last",
+        "specific_date": "repeat.monthly.tab.date"
+      },
+      "first_last_options": ["first_day", "last_day"],
+      "first_last_labels_keys": {
+        "first_day": "repeat.monthly.first_day",
+        "last_day": "repeat.monthly.last_day"
+      },
+      "show_time_picker": true,
+      "short_month_warning_key": "repeat.monthly.short_month_warning",
+      "_comment_warning": "Warning shown when user selects day 29/30/31 — some months are shorter.",
+      "short_month_fallback_options": ["use_last_day", "skip_month"],
+      "short_month_fallback_labels_keys": {
+        "use_last_day": "repeat.monthly.fallback.use_last_day",
+        "skip_month": "repeat.monthly.fallback.skip_month"
+      },
+      "default_short_month_fallback": "use_last_day"
+    },
+
+    "quarterly": {
+      "_comment": "Quarterly repeat — same UI as monthly.",
+      "tabs": ["first_last_day", "specific_date"],
+      "tab_labels_keys": {
+        "first_last_day": "repeat.quarterly.tab.first_last",
+        "specific_date": "repeat.quarterly.tab.date"
+      },
+      "show_time_picker": true
+    },
+
+    "yearly": {
+      "_comment": "Yearly repeat — calendar UI, max 2 date selections.",
+      "show_calendar": true,
+      "max_date_selections": 2,
+      "_comment_max": "User can select up to this many dates per year. Configurable here.",
+      "show_time_picker": true,
+      "_comment_time": "Time picker appears after user selects a date on the calendar.",
+      "calendar_highlight_selected_key": "repeat.yearly.calendar_selected_label"
+    }
+  },
+
+  "week_days": {
+    "_comment": "Week day names used by day picker on schedule screen for weekly/biweekly repeat.",
+    "_comment_2": "NEVER hardcode day names in Flutter widgets. Always load from here via ConfigResolver.",
+    "_comment_3": "Values are i18n keys — resolved through the active language ARB file.",
+
+    "short_names_keys": {
+      "monday":    "day.mon.short",
+      "tuesday":   "day.tue.short",
+      "wednesday": "day.wed.short",
+      "thursday":  "day.thu.short",
+      "friday":    "day.fri.short",
+      "saturday":  "day.sat.short",
+      "sunday":    "day.sun.short"
+    },
+
+    "full_names_keys": {
+      "monday":    "day.monday",
+      "tuesday":   "day.tuesday",
+      "wednesday": "day.wednesday",
+      "thursday":  "day.thursday",
+      "friday":    "day.friday",
+      "saturday":  "day.saturday",
+      "sunday":    "day.sunday"
+    },
+
+    "ordered_week": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+    "_comment_order": "The order days are displayed in the day picker. Overridden per language in language-config.json.",
+
+    "start_of_week": "monday",
+    "_comment_start": "Default. Overridden per language in language-config.json first_day_of_week.",
+
+    "weekend_days": ["saturday", "sunday"],
+    "working_days": ["monday", "tuesday", "wednesday", "thursday", "friday"]
+  },
+
+  "time_defaults": {
+    "_comment": "Global default times. Used when user has not configured their own schedule in preferences.",
+    "_comment_2": "All times in 24h HH:mm format.",
+    "_comment_3": "Resolution order: user_preferences → task_config → these values.",
+
+    "wake_up_time": "07:00",
+    "sleep_time": "22:30",
+    "job_start_time": "09:00",
+    "job_end_time": "17:30",
+    "default_preferred_notification_time": "09:00",
+    "_comment_notification": "Default time for new tasks when user has no preferred time set.",
+
+    "weekend_wake_up_time": "08:30",
+    "weekend_sleep_time": "23:30",
+    "weekend_days_off": ["saturday", "sunday"],
+
+    "time_picker_interval_minutes": 15,
+    "_comment_interval": "Time picker increments. 15 minutes keeps options manageable.",
+    "time_picker_format": "24h",
+    "_comment_format": "Options: '24h' | '12h'. 24h is standard in UK."
+  },
+
+  "timezone": {
+    "_comment": "Timezone handling for notifications and display.",
+
+    "use_home_timezone_for_notifications": true,
+    "_comment_home": "All task notification times are based on home_timezone, not system timezone.",
+    "_comment_home_2": "This means medication at 9am fires at 9am home time even if user is abroad.",
+
+    "use_system_timezone_for_display": true,
+    "_comment_display": "On-screen times display in system (device) timezone — user sees local time when travelling.",
+
+    "detect_timezone_drift": true,
+    "_comment_drift": "Compare home_timezone and system_timezone. Alert user if they differ significantly.",
+    "drift_alert_threshold_hours": 2,
+    "_comment_threshold": "If home and system timezone differ by more than this, show a subtle drift alert.",
+    "drift_alert_message_key": "timezone.drift_alert",
+    "drift_alert_dismissible": true,
+
+    "default_home_timezone": "Europe/London",
+    "_comment_default": "Auto-detected from device on first launch. Stored in user_preferences as home_timezone.",
+    "store_system_timezone": true,
+    "_comment_system_store": "Also store system_timezone in user_preferences for drift detection.",
+
+    "dst_aware": true,
+    "_comment_dst": "Must handle BST/GMT switch for UK users. Use Flutter timezone package — keep it updated.",
+    "dst_change_notification": false,
+    "_comment_dst_notify": "Future option to notify users when clocks change. Disabled for now."
+  },
+
+  "reminder_options": {
+    "_comment": "Default remind-me options shown on schedule screen.",
+    "_comment_2": "Resolution order: user preferred reminders → task config reminders → these defaults.",
+
+    "options_minutes": [2, 5, 10, 15, 30, 60],
+    "labels_keys": {
+      "2":  "reminder.2m",
+      "5":  "reminder.5m",
+      "10": "reminder.10m",
+      "15": "reminder.15m",
+      "30": "reminder.30m",
+      "60": "reminder.1h"
+    },
+
+    "extended_options_minutes": [1440, 10080, 43200],
+    "_comment_extended": "Extended options for yearly tasks: 1 day (1440m), 1 week (10080m), 1 month (43200m).",
+    "extended_labels_keys": {
+      "1440":  "reminder.1day",
+      "10080": "reminder.1week",
+      "43200": "reminder.1month"
+    },
+
+    "show_extended_for_frequencies": ["yearly", "quarterly"],
+    "_comment_show_extended": "Only show extended reminder options when repeat frequency is yearly or quarterly.",
+
+    "allow_multiple_reminders": true,
+    "_comment_multiple": "User can select more than one reminder option per task.",
+    "max_reminders_per_task": 3
+  },
+
+  "notification_channels": {
+    "_comment": "Notification delivery channel options shown on schedule screen.",
+    "_comment_2": "Defaults driven by: user_preference → task_config → these values.",
+
+    "available_channels": ["app", "alarm", "email", "whatsapp"],
+
+    "channel_labels_keys": {
+      "app":      "notification_channel.app",
+      "alarm":    "notification_channel.alarm",
+      "email":    "notification_channel.email",
+      "whatsapp": "notification_channel.whatsapp"
+    },
+
+    "defaults": {
+      "app":      true,
+      "alarm":    false,
+      "email":    false,
+      "whatsapp": false
+    },
+
+    "email_requires_registration": true,
+    "_comment_email": "If user selects email but is not registered, show prompt with link to registration.",
+    "email_unregistered_prompt_key": "notification_channel.email_unregistered_prompt",
+
+    "whatsapp_requires_mobile": true,
+    "_comment_whatsapp": "If user selects WhatsApp but has no mobile number saved, prompt to add number in preferences.",
+    "whatsapp_no_number_prompt_key": "notification_channel.whatsapp_no_number_prompt",
+
+    "alarm_ios_not_supported_key": "alarm.ios_not_supported",
+    "_comment_ios": "On iOS, show graceful message if user taps alarm toggle — true OS alarms not supported on iOS."
+  }
+}

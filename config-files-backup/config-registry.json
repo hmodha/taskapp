@@ -1,0 +1,235 @@
+{
+  "_metadata": {
+    "_comment": "config-registry.json — The ConfigResolver service reads this file first on app startup.",
+    "_comment_2": "It maps key namespaces to their config files so ConfigResolver.getValue('key') knows exactly which file to load.",
+    "_comment_3": "NEVER hardcode config file names in Flutter code — always go through ConfigResolver using this registry.",
+    "_comment_4": "Resolution order per key: user_preferences → task_config → [file mapped here] (global fallback).",
+    "_comment_5": "Namespace pattern: 'prefix.*' means all keys starting with that prefix live in the mapped file.",
+    "_comment_6": "More specific namespaces take priority over wildcards. e.g. 'notification.alarm.*' beats 'notification.*'.",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "platform"
+  },
+
+  "resolution_order": [
+    "user_preferences",
+    "task_config",
+    "global_config"
+  ],
+  "_comment_resolution": "This order is sacred and must be respected by ConfigResolver everywhere in the app.",
+
+  "registry": {
+
+    "app.*": {
+      "file": "app-global-config.json",
+      "_comment": "App identity, auth, subscription, feature flags, command architecture."
+    },
+
+    "auth.*": {
+      "file": "app-global-config.json",
+      "_comment": "Auth provider settings, guest limits, session config."
+    },
+
+    "subscription.*": {
+      "file": "app-global-config.json",
+      "_comment": "Tier definitions and feature gates."
+    },
+
+    "feature.*": {
+      "file": "app-global-config.json",
+      "_comment": "Feature flags for phased rollouts."
+    },
+
+    "command.*": {
+      "file": "app-global-config.json",
+      "_comment": "Command architecture — registered commands for voice-readiness."
+    },
+
+    "dashboard.*": {
+      "file": "dashboard-global-config.json",
+      "_comment": "Today, Tomorrow, Upcoming list behaviour and display rules."
+    },
+
+    "snooze.*": {
+      "file": "dashboard-global-config.json",
+      "_comment": "Snooze options and behaviour."
+    },
+
+    "reschedule.*": {
+      "file": "dashboard-global-config.json",
+      "_comment": "Reschedule rules for tomorrow and upcoming tasks."
+    },
+
+    "task.completion.*": {
+      "file": "dashboard-global-config.json",
+      "_comment": "Task completion rules, point awards, strike-through behaviour."
+    },
+
+    "task.history.*": {
+      "file": "dashboard-global-config.json",
+      "_comment": "Task history screen config — filters, retention, editable window."
+    },
+
+    "schedule.*": {
+      "file": "schedule-global-config.json",
+      "_comment": "Schedule screen — repeat options, reminders, time defaults, week days."
+    },
+
+    "repeat.*": {
+      "file": "schedule-global-config.json",
+      "_comment": "Repeat pattern labels and options."
+    },
+
+    "reminder.*": {
+      "file": "schedule-global-config.json",
+      "_comment": "Remind me options and defaults."
+    },
+
+    "day.*": {
+      "file": "schedule-global-config.json",
+      "_comment": "Week day names loaded by day picker widgets."
+    },
+
+    "time.*": {
+      "file": "schedule-global-config.json",
+      "_comment": "Time defaults — wake up, sleep, job times."
+    },
+
+    "timezone.*": {
+      "file": "schedule-global-config.json",
+      "_comment": "Timezone handling — home vs system timezone, DST, drift detection."
+    },
+
+    "notification.*": {
+      "file": "notification-global-config.json",
+      "_comment": "All notification types, quiet hours, message centre, push behaviour."
+    },
+
+    "message_centre.*": {
+      "file": "notification-global-config.json",
+      "_comment": "In-app message centre configuration."
+    },
+
+    "push.*": {
+      "file": "notification-global-config.json",
+      "_comment": "Server push task notification behaviour."
+    },
+
+    "alarm.*": {
+      "file": "alarm-global-config.json",
+      "_comment": "OS-level alarm settings, pre-schedule window, platform support."
+    },
+
+    "api.*": {
+      "file": "api-global-config.json",
+      "_comment": "External API integrations — weather, DVLA, bin collection, GP."
+    },
+
+    "smart_confirm.*": {
+      "file": "api-global-config.json",
+      "_comment": "Smart Task Confirmation screen for API-suggested tasks."
+    },
+
+    "points.*": {
+      "file": "points-global-config.json",
+      "_comment": "Points rules, audit log, subscription thresholds, milestone behaviour."
+    },
+
+    "milestone.*": {
+      "file": "points-global-config.json",
+      "_comment": "Points milestone thresholds and rewards."
+    },
+
+    "ui.*": {
+      "file": "ui-global-config.json",
+      "_comment": "Animations, welcome screen, setup wizard globals, account screen."
+    },
+
+    "animation.*": {
+      "file": "ui-global-config.json",
+      "_comment": "Master animation switch and per-animation toggles."
+    },
+
+    "welcome.*": {
+      "file": "ui-global-config.json",
+      "_comment": "Welcome screen content and flow."
+    },
+
+    "setup_wizard.*": {
+      "file": "ui-global-config.json",
+      "_comment": "Setup wizard global settings. Question content is in setup-config.json."
+    },
+
+    "account.*": {
+      "file": "ui-global-config.json",
+      "_comment": "Account screen sections and visibility."
+    },
+
+    "location.*": {
+      "file": "ui-global-config.json",
+      "_comment": "Default location list and custom location settings."
+    },
+
+    "household.*": {
+      "file": "ui-global-config.json",
+      "_comment": "Household age group options."
+    },
+
+    "vehicle.*": {
+      "file": "ui-global-config.json",
+      "_comment": "Vehicle types, reg requirements, cycle service interval."
+    },
+
+    "preferences.*": {
+      "file": "ui-global-config.json",
+      "_comment": "User preferences screen sections."
+    }
+
+  },
+
+  "config_files": {
+    "_comment": "Master list of all global config files. Used by ConfigResolver to validate registry integrity on startup.",
+    "files": [
+      "config-registry.json",
+      "app-global-config.json",
+      "dashboard-global-config.json",
+      "schedule-global-config.json",
+      "notification-global-config.json",
+      "alarm-global-config.json",
+      "api-global-config.json",
+      "points-global-config.json",
+      "ui-global-config.json",
+      "language-config.json",
+      "theme-config.json",
+      "notification-config.json",
+      "setup-config.json",
+      "master-tasks-config.json",
+      "pets-config.json",
+      "checklist-config.json"
+    ],
+    "required_on_startup": [
+      "config-registry.json",
+      "app-global-config.json",
+      "language-config.json",
+      "theme-config.json"
+    ],
+    "_comment_startup": "These files MUST load successfully on startup. All others load on demand.",
+    "load_on_demand": [
+      "master-tasks-config.json",
+      "setup-config.json",
+      "pets-config.json",
+      "checklist-config.json"
+    ],
+    "_comment_demand": "Load only when the relevant screen or feature is accessed. Reduces startup time."
+  },
+
+  "cache": {
+    "_comment": "Config file caching behaviour.",
+    "cache_configs_in_memory": true,
+    "_comment_cache": "Once loaded, config files are cached in memory for the app session. No repeated disk reads.",
+    "invalidate_on_app_update": true,
+    "_comment_invalidate": "Clear config cache when app version changes — forces reload of potentially updated config files.",
+    "hot_reload_supported": false,
+    "_comment_hot": "Config changes require app restart. Hot reload not supported for safety."
+  }
+}

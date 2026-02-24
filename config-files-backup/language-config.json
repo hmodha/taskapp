@@ -1,0 +1,170 @@
+{
+  "_metadata": {
+    "_comment": "language-config.json — Defines all supported languages for the app.",
+    "_comment_2": "All user-facing strings are stored as i18n keys in ARB files (lib/l10n/).",
+    "_comment_3": "Config files (global-config, master-tasks-config etc.) use i18n keys, NOT raw strings.",
+    "_comment_4": "To add a new language: add an entry here and create the corresponding ARB file.",
+    "_comment_5": "text_direction: 'ltr' = Left-to-Right | 'rtl' = Right-to-Left (e.g. Urdu).",
+    "_comment_6": "font_scale_factor: some scripts (e.g. Gujarati, Hindi) need slightly larger base size for legibility.",
+    "_comment_7": "arb_file: relative path from lib/l10n/ to the ARB translation file for this language.",
+    "_comment_8": "display_name: name of the language written in its OWN script (shown to user in language picker).",
+    "_comment_9": "enabled: false = language defined but not yet available in the app (translations pending).",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "i18n"
+  },
+
+  "default_language": "en",
+
+  "_comment_default_language": "The language preselected on the Welcome Screen. Loaded from this config. Can be overridden by user preference once set.",
+
+  "supported_languages": [
+
+    {
+      "locale_code": "en",
+      "display_name": "English",
+      "display_name_english": "English",
+      "arb_file": "app_en.arb",
+      "text_direction": "ltr",
+      "font_scale_factor": 1.0,
+      "date_format": "dd/MM/yyyy",
+      "time_format": "HH:mm",
+      "first_day_of_week": "monday",
+      "_comment": "British English. dd/MM/yyyy date format standard for UK.",
+      "enabled": true
+    },
+
+    {
+      "locale_code": "pl",
+      "display_name": "Polski",
+      "display_name_english": "Polish",
+      "arb_file": "app_pl.arb",
+      "text_direction": "ltr",
+      "font_scale_factor": 1.0,
+      "date_format": "dd.MM.yyyy",
+      "time_format": "HH:mm",
+      "first_day_of_week": "monday",
+      "_comment": "Polish — one of the most widely spoken non-English languages in the UK.",
+      "enabled": true
+    },
+
+    {
+      "locale_code": "ro",
+      "display_name": "Română",
+      "display_name_english": "Romanian",
+      "arb_file": "app_ro.arb",
+      "text_direction": "ltr",
+      "font_scale_factor": 1.0,
+      "date_format": "dd.MM.yyyy",
+      "time_format": "HH:mm",
+      "first_day_of_week": "monday",
+      "_comment": "Romanian — significant UK population particularly post-2014 EU freedom of movement.",
+      "enabled": true
+    },
+
+    {
+      "locale_code": "ur",
+      "display_name": "اردو",
+      "display_name_english": "Urdu",
+      "arb_file": "app_ur.arb",
+      "text_direction": "rtl",
+      "font_scale_factor": 1.15,
+      "_comment_rtl": "RTL CRITICAL: All layout widgets must use Directionality-aware equivalents. Test thoroughly on both platforms.",
+      "date_format": "dd/MM/yyyy",
+      "time_format": "HH:mm",
+      "first_day_of_week": "monday",
+      "_comment": "Urdu — widely spoken in UK Pakistani and Kashmiri communities. Nastaliq script preferred but Naskh acceptable.",
+      "enabled": true
+    },
+
+    {
+      "locale_code": "hi",
+      "display_name": "हिन्दी",
+      "display_name_english": "Hindi",
+      "arb_file": "app_hi.arb",
+      "text_direction": "ltr",
+      "font_scale_factor": 1.1,
+      "date_format": "dd/MM/yyyy",
+      "time_format": "HH:mm",
+      "first_day_of_week": "monday",
+      "_comment": "Hindi — Devanagari script. Widely spoken among UK Indian communities.",
+      "enabled": true
+    },
+
+    {
+      "locale_code": "gu",
+      "display_name": "ગુજરાતી",
+      "display_name_english": "Gujarati",
+      "arb_file": "app_gu.arb",
+      "text_direction": "ltr",
+      "font_scale_factor": 1.1,
+      "date_format": "dd/MM/yyyy",
+      "time_format": "HH:mm",
+      "first_day_of_week": "sunday",
+      "_comment": "Gujarati — significant UK community particularly in Leicester, London, and the Midlands.",
+      "_comment_week": "first_day_of_week is Sunday as is traditional in Gujarati calendars.",
+      "enabled": true
+    },
+
+    {
+      "locale_code": "pa",
+      "display_name": "ਪੰਜਾਬੀ",
+      "display_name_english": "Punjabi",
+      "arb_file": "app_pa.arb",
+      "text_direction": "ltr",
+      "font_scale_factor": 1.1,
+      "date_format": "dd/MM/yyyy",
+      "time_format": "HH:mm",
+      "first_day_of_week": "monday",
+      "_comment": "Punjabi — Gurmukhi script. Large UK Sikh and Punjabi communities particularly in the Midlands.",
+      "_comment_2": "Note: Punjabi written in Shahmukhi script (used in Pakistan) is RTL — this config covers Gurmukhi (India/UK Sikh community).",
+      "enabled": true
+    }
+
+  ],
+
+  "fallback_language": "en",
+  "_comment_fallback": "If a translation key is missing in the selected language ARB file, fall back to English. Never show a raw key to the user.",
+
+  "rtl_languages": ["ur"],
+  "_comment_rtl_languages": "Convenience list used by the app's Directionality widget wrapper at startup. Update this list if RTL languages are added.",
+
+  "timezone_display": {
+    "_comment": "Controls how timezone labels are shown in the UI when user selects home_timezone in setup wizard.",
+    "format": "city_and_offset",
+    "_comment_format": "Options: 'city_only' | 'offset_only' | 'city_and_offset'. Example city_and_offset: 'London (UTC+0)' or 'London (UTC+1)' in BST.",
+    "show_dst_indicator": true,
+    "_comment_dst": "If true, shows BST/GMT indicator next to UK timezone in UI. Important for UK users who may not understand DST switching."
+  },
+
+  "language_picker_ui": {
+    "_comment": "Controls how the language picker is rendered on the Welcome Screen.",
+    "show_flag_emoji": true,
+    "_comment_flag": "If true, shows flag emoji next to language name. Flags for locale codes: en=🇬🇧, pl=🇵🇱, ro=🇷🇴, ur=🇵🇰, hi=🇮🇳, gu=🇮🇳, pa=🇮🇳",
+    "show_native_name": true,
+    "_comment_native": "If true, shows language name in its own script (display_name). Recommended — users can find their language even if they can't read English.",
+    "show_english_name": true,
+    "_comment_english": "If true, shows English name in smaller text below native name.",
+    "picker_style": "list",
+    "_comment_style": "Options: 'list' | 'grid'. List recommended for languages with long native names."
+  },
+
+  "i18n_key_convention": {
+    "_comment": "Documents the key naming convention used across all ARB files and config files.",
+    "pattern": "screen.component.element",
+    "examples": [
+      "dashboard.today_list.show_more",
+      "schedule.repeat.daily.select_time",
+      "notification.morning_summary.title",
+      "setup_wizard.q1.wake_time.label",
+      "account.points.milestone_message",
+      "common.button.save",
+      "common.button.skip",
+      "common.button.next"
+    ],
+    "_comment_common": "Keys prefixed with 'common.' are shared across multiple screens. Always check common keys before creating a new screen-specific key.",
+    "_comment_task": "Task names in master-tasks-config.json use pattern: task.<category_id>.<task_id>.name",
+    "_comment_category": "Category names use pattern: category.<category_id>.name",
+    "_comment_notification": "Notification templates use pattern: notification.<type>.<element> e.g. notification.missed_task.body"
+  }
+}

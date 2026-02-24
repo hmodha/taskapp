@@ -1,0 +1,201 @@
+{
+  "_metadata": {
+    "_comment": "app-global-config.json — Core app identity, authentication, subscription tiers, feature flags, and command architecture.",
+    "_comment_2": "Namespace: app.*, auth.*, subscription.*, feature.*, command.*",
+    "_comment_3": "This file is required on startup. Changes here affect the entire app.",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "platform"
+  },
+
+  "app": {
+    "_comment": "Core app identity settings.",
+    "app_name_key": "app.name",
+    "app_tagline_key": "app.tagline",
+    "app_version": "1.0.0",
+    "minimum_supported_os_android": "8.0",
+    "minimum_supported_os_ios": "14.0",
+    "default_country": "GB",
+    "default_currency": "GBP",
+    "support_email": "support@yourapp.com",
+    "privacy_policy_url": "https://yourapp.com/privacy",
+    "terms_url": "https://yourapp.com/terms",
+    "feedback_url": "https://yourapp.com/feedback",
+    "store_listing_android": "https://play.google.com/store/apps/details?id=com.yourapp",
+    "store_listing_ios": "https://apps.apple.com/app/yourapp/id000000000"
+  },
+
+  "config_resolver": {
+    "_comment": "Documents the resolution hierarchy enforced by the shared ConfigResolver service.",
+    "_comment_2": "EVERY value read anywhere in the app MUST go through ConfigResolver.getValue(key).",
+    "_comment_3": "Direct config file access is forbidden in feature code.",
+    "resolution_order": [
+      "user_preferences",
+      "task_config",
+      "global_config"
+    ],
+    "fallback_on_null": true,
+    "fallback_on_empty_string": true,
+    "log_resolution_path": false,
+    "_comment_log": "Enable in debug builds only. Logs which config level resolved each value."
+  },
+
+  "auth": {
+    "_comment": "Authentication behaviour, providers, and thresholds.",
+    "guest_task_limit": 5,
+    "_comment_guest": "Guest users can create this many tasks before the auth nudge bottom sheet appears.",
+    "auth_nudge_title_key": "auth.nudge.title",
+    "auth_nudge_message_key": "auth.nudge.message",
+    "auth_nudge_cta_key": "auth.nudge.cta",
+    "auth_providers_enabled": {
+      "magic_link": true,
+      "google": true,
+      "apple": true,
+      "password": false,
+      "_comment": "Password auth permanently disabled. Passwordless only — no exceptions."
+    },
+    "magic_link_expiry_minutes": 15,
+    "session_timeout_days": 30,
+    "migrate_guest_data_on_register": true,
+    "_comment_migrate": "All tasks, points, and preferences created as guest migrate to account on registration.",
+    "returning_user_skip_wizard": true,
+    "_comment_returning": "Returning user signs in on welcome screen → skip setup wizard → go straight to dashboard.",
+    "firebase_project": "your-firebase-project-id",
+    "_comment_firebase": "Firebase project ID. Actual credentials stored in secure environment config, not here."
+  },
+
+  "subscription": {
+    "_comment": "Subscription tier definitions and feature access gates.",
+    "tiers": {
+
+      "guest": {
+        "_comment": "Pre-registration. Local only. Limited features.",
+        "task_limit": 5,
+        "cloud_backup": false,
+        "themes_available": ["midnight_focus", "ocean_calm"],
+        "points_sync": false,
+        "social_features": false,
+        "email_notifications": false,
+        "whatsapp_notifications": false
+      },
+
+      "free": {
+        "_comment": "Registered user. Unlimited tasks. Full theme access. No social features.",
+        "task_limit": -1,
+        "_comment_limit": "-1 = unlimited.",
+        "cloud_backup": true,
+        "themes_available": [
+          "midnight_focus", "ocean_calm", "warm_sunrise",
+          "forest_zen", "royal_minimal"
+        ],
+        "points_sync": true,
+        "social_features": false,
+        "email_notifications": true,
+        "whatsapp_notifications": false
+      },
+
+      "premium": {
+        "_comment": "Paid or points-earned tier. All features including future social.",
+        "task_limit": -1,
+        "cloud_backup": true,
+        "themes_available": "all",
+        "points_sync": true,
+        "social_features": true,
+        "_comment_social": "Future: assign tasks to household members / friends.",
+        "email_notifications": true,
+        "whatsapp_notifications": true,
+        "priority_support": true
+      }
+    },
+
+    "unlock_cta_key": "subscription.unlock_cta",
+    "premium_earned_message_key": "subscription.premium_earned",
+    "expiry_warning_days": 7,
+    "_comment_expiry": "Show subscription expiry warning this many days before it expires."
+  },
+
+  "feature_flags": {
+    "_comment": "Feature flags for phased rollouts. Set false to disable without code changes.",
+    "_comment_2": "All future features start as false. Enable per release.",
+
+    "enable_voice_input": false,
+    "_comment_voice": "Command architecture is built from day one — this flag enables the voice UI when ready.",
+
+    "enable_whatsapp_notifications": false,
+    "_comment_whatsapp": "Requires WhatsApp Business API integration. Pending.",
+
+    "enable_gp_appointments": false,
+    "_comment_gp": "GP appointment API integration. Future requirement.",
+
+    "enable_checklists": false,
+    "_comment_checklists": "Checklist feature. Config in checklist-config.json. UI not yet built.",
+
+    "enable_social_task_sharing": false,
+    "_comment_social": "Assign tasks to household members. Future paid feature.",
+
+    "enable_household_task_assignment": false,
+
+    "enable_email_push_tasks": false,
+    "_comment_email_push": "Forward email → server parses → pushes task to app. Future.",
+
+    "enable_streak_system": false,
+    "_comment_streak": "Streak tracking deferred. Will be fully defined in future sprint.",
+
+    "enable_weather_notifications": true,
+    "enable_dvla_integration": true,
+    "enable_bin_collection": true,
+    "enable_point_milestones": true,
+    "enable_message_centre": true,
+
+    "enable_dark_mode_auto": true,
+    "_comment_dark": "Respects device dark/light mode setting and applies correct theme variant automatically.",
+
+    "enable_setup_wizard": true,
+    "enable_smart_task_confirmation": true,
+    "_comment_smart": "Smart Task Confirmation screen for API-suggested tasks (DVLA, bin, GP, push server)."
+  },
+
+  "command_architecture": {
+    "_comment": "Command pattern — every user action is a Command object dispatched via CommandDispatcher.",
+    "_comment_2": "This enables voice input in future: voice simply constructs and dispatches the same Commands.",
+    "_comment_3": "All commands must be registered here. CommandDispatcher validates against this list on startup.",
+    "_comment_4": "Pattern: <Action><Entity>Command — e.g. CreateTaskCommand, CompleteTaskCommand.",
+
+    "commands_registered": [
+      "CreateTaskCommand",
+      "EditTaskCommand",
+      "DeleteTaskCommand",
+      "CompleteTaskCommand",
+      "UncompleteTaskCommand",
+      "SkipTaskCommand",
+      "SnoozeTaskCommand",
+      "RescheduleTaskCommand",
+      "AcceptPushTaskCommand",
+      "RejectPushTaskCommand",
+      "AcceptApiSuggestedTaskCommand",
+      "RejectApiSuggestedTaskCommand",
+      "ChangeThemeCommand",
+      "ChangeLanguageCommand",
+      "ChangeTextSizeCommand",
+      "UpdatePreferencesCommand",
+      "UpdateNotificationSettingsCommand",
+      "AddLocationCommand",
+      "RemoveLocationCommand",
+      "LoginCommand",
+      "LogoutCommand",
+      "DeleteAccountCommand",
+      "SyncGuestDataCommand",
+      "TriggerApiLookupCommand",
+      "RetryPendingApiLookupsCommand"
+    ],
+
+    "enable_command_logging": false,
+    "_comment_logging": "Enable in debug builds to log every dispatched command with timestamp and payload.",
+
+    "enable_undo": false,
+    "_comment_undo": "Future: undo last command. Command pattern makes this trivial to add later.",
+
+    "voice_command_prefix": "hey_task",
+    "_comment_prefix": "Future wake word for voice input. Placeholder — not active until enable_voice_input = true."
+  }
+}

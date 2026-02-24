@@ -1,0 +1,240 @@
+{
+  "_metadata": {
+    "_comment": "notification-global-config.json — All notification types, quiet hours, message centre, and push notification behaviour.",
+    "_comment_2": "Namespaces: notification.*, message_centre.*, push.*",
+    "_comment_3": "Message templates and i18n keys for notification bodies are in notification-config.json.",
+    "_comment_4": "This file controls WHEN and HOW notifications fire. notification-config.json controls WHAT they say.",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "product"
+  },
+
+  "notification": {
+    "_comment": "Master notification settings.",
+
+    "enable_all_non_task_notifications": true,
+    "_comment_master": "Global on/off for all non-task notifications. Task reminders always fire regardless.",
+
+    "user_can_disable_non_task": true,
+    "_comment_user": "Users can turn off all non-task notifications from User Preferences → Notifications section.",
+
+    "like_dislike_on_non_task": true,
+    "_comment_like": "All non-task notifications show a like/dislike option. Dislike auto-disables that notification type in user preferences.",
+
+    "quiet_hours": {
+      "_comment": "No non-task notifications fire during quiet hours.",
+      "_comment_2": "Quiet hours default to sleep_time → wake_up_time from schedule-global-config.json time_defaults.",
+      "_comment_3": "User configured sleep/wake times in preferences override these defaults.",
+      "enabled": true,
+      "default_start": "22:30",
+      "_comment_start": "Overridden by user sleep_time if set.",
+      "default_end": "07:00",
+      "_comment_end": "Overridden by user wake_up_time if set.",
+      "apply_to_missed_task_notifications": true,
+      "_comment_missed_quiet": "Missed task notifications are suppressed AFTER sleep time. See missed_task section for exact rules.",
+      "apply_to_morning_summary": false,
+      "_comment_morning_quiet": "Morning summary fires after wake time — quiet hours do not apply.",
+      "apply_to_weather_summary": false,
+      "_comment_weather_quiet": "Weather summary fires before job time — quiet hours do not apply."
+    },
+
+    "task_notifications": {
+      "_comment": "Standard reminders for scheduled tasks. Cannot be globally disabled.",
+      "enabled": true,
+      "can_user_disable": false,
+      "_comment_disable": "Task notifications are core app function. User cannot disable globally — only per task.",
+      "message_fallback_order": [
+        "task_custom_notification_message",
+        "user_custom_title_plus_task_name",
+        "task_name_only"
+      ],
+      "_comment_fallback": "Resolution order for notification body text. First non-null value wins.",
+      "include_in_message_centre": true
+    },
+
+    "missed_task_notifications": {
+      "_comment": "Fires when a task time passes without the task being completed.",
+      "enabled": true,
+      "can_user_disable": true,
+      "has_like_dislike": false,
+      "_comment_like": "Missed task notifications do not have like/dislike — they are operationally important.",
+      "delay_intervals_minutes": [10, 30, 120],
+      "_comment_intervals": "Notifications fire at 10m, 30m, and 2h after the missed task time. All configurable.",
+      "suppress_after_sleep_time": true,
+      "_comment_suppress": "If a missed notification interval falls AFTER sleep time, suppress it — add to morning summary instead.",
+      "fire_at_sleep_time_boundary": true,
+      "_comment_boundary": "A missed notification timed exactly at sleep time boundary still fires. Confirmed requirement.",
+      "include_in_morning_summary_if_suppressed": true,
+      "_comment_morning": "Any suppressed missed task notifications are included in next morning's summary.",
+      "message_template_key": "notification.missed_task.body",
+      "title_key": "notification.missed_task.title",
+      "include_in_message_centre": true
+    },
+
+    "morning_summary": {
+      "_comment": "Daily morning summary — fires after wake-up time.",
+      "enabled": true,
+      "can_user_disable": true,
+      "has_like_dislike": true,
+      "offset_after_wake_minutes": 60,
+      "_comment_offset": "Fires this many minutes after user wake_up_time. Uses user preference, else global time_defaults.",
+      "include_motivation_message": true,
+      "_comment_motivation": "Random motivational message from pool defined in notification-config.json.",
+      "include_todays_tasks": true,
+      "group_multi_time_tasks": true,
+      "_comment_group": "Tasks with multiple daily times grouped: 'Medication — 09:00, 13:00, 18:00'.",
+      "include_suppressed_missed_tasks": true,
+      "_comment_suppressed": "Include any missed task notifications that were suppressed overnight.",
+      "title_key": "notification.morning_summary.title",
+      "body_template_key": "notification.morning_summary.body",
+      "include_in_message_centre": true
+    },
+
+    "weather_summary": {
+      "_comment": "Daily weather notification before job start time.",
+      "enabled": true,
+      "can_user_disable": true,
+      "has_like_dislike": true,
+      "offset_before_job_minutes": 30,
+      "_comment_offset": "Fires 30 minutes before user job_start_time.",
+      "requires_location_or_postcode": true,
+      "_comment_location": "If no location permission and no postcode saved, weather notification is suppressed gracefully. No error shown.",
+      "api_primary": "met_office",
+      "api_fallback": "open_meteo",
+      "cache_last_response_in_isar": true,
+      "_comment_cache": "Store last successful API response. Use cached response if API unreachable at notification time.",
+      "conditions": {
+        "rain": {
+          "enabled": true,
+          "threshold_probability_percent": 60,
+          "_comment": "Show umbrella suggestion if rain probability ≥ 60%.",
+          "message_key": "notification.weather.rain"
+        },
+        "high_uv": {
+          "enabled": true,
+          "threshold_uv_index": 6,
+          "_comment": "Show sunscreen suggestion if UV index ≥ 6.",
+          "message_key": "notification.weather.high_uv"
+        },
+        "high_pollen": {
+          "enabled": true,
+          "threshold_level": "high",
+          "_comment_level": "Options: 'moderate' | 'high' | 'very_high'. Only alert at high or above.",
+          "enabled_months": [3, 4, 5, 6, 7, 8, 9],
+          "_comment_months": "Pollen alerts shown March through September only. UK pollen season.",
+          "message_key": "notification.weather.high_pollen"
+        }
+      },
+      "title_key": "notification.weather_summary.title",
+      "no_alert_message_key": "notification.weather_summary.no_alert",
+      "_comment_no_alert": "Message shown when weather is fine and no special conditions detected.",
+      "include_in_message_centre": true
+    },
+
+    "evening_summary": {
+      "_comment": "Daily evening summary — fires before sleep time.",
+      "enabled": true,
+      "can_user_disable": true,
+      "has_like_dislike": true,
+      "offset_before_sleep_minutes": 60,
+      "_comment_offset": "Fires 60 minutes before user sleep_time.",
+      "include_missed_tasks_today": true,
+      "include_tomorrows_tasks": true,
+      "group_multi_time_tasks": true,
+      "title_key": "notification.evening_summary.title",
+      "body_template_key": "notification.evening_summary.body",
+      "include_in_message_centre": true
+    },
+
+    "point_milestone": {
+      "_comment": "Weekly points milestone notification.",
+      "enabled": true,
+      "can_user_disable": true,
+      "has_like_dislike": true,
+      "send_day_of_week": "sunday",
+      "_comment_day": "Default Sunday. Overridden by user_preferences milestone_weekday.",
+      "send_time": "18:00",
+      "no_new_milestone_behaviour": "send_encouragement",
+      "_comment_no_milestone": "Options: 'send_encouragement' | 'skip'. If no new milestone, send motivation instead.",
+      "encouragement_message_key": "notification.point_milestone.encouragement",
+      "milestone_message_key": "notification.point_milestone.milestone",
+      "title_key": "notification.point_milestone.title",
+      "include_in_message_centre": true
+    }
+  },
+
+  "message_centre": {
+    "_comment": "In-app message centre. Accessed via message icon in top bar.",
+    "enabled": true,
+    "show_unread_badge": true,
+    "badge_max_display": 99,
+    "_comment_badge": "If unread > 99, badge shows '99+'.",
+    "icon_position": "top_bar_right",
+    "retention_days": 30,
+    "_comment_retention": "Messages older than 30 days removed from message centre.",
+    "message_types_included": [
+      "task_notification",
+      "missed_task",
+      "morning_summary",
+      "evening_summary",
+      "weather_summary",
+      "point_milestone",
+      "auth_nudge",
+      "api_task_suggestion",
+      "push_server"
+    ],
+    "sort_order": "descending",
+    "_comment_sort": "Most recent messages shown first.",
+    "mark_all_read_label_key": "message_centre.mark_all_read",
+    "empty_state_key": "message_centre.empty",
+    "screen_title_key": "message_centre.title",
+
+    "isar_collection": "MessageCentreItem",
+    "_comment_isar": "Isar collection for message centre items.",
+    "isar_fields": [
+      "id",
+      "type",
+      "title",
+      "body",
+      "timestamp",
+      "is_read",
+      "source_task_id",
+      "action_url",
+      "is_liked",
+      "is_disliked"
+    ]
+  },
+
+  "push": {
+    "_comment": "Server-pushed task notifications via Firebase Cloud Messaging.",
+    "provider": "firebase_cloud_messaging",
+    "_comment_provider": "FCM handles both Android (FCM) and iOS (APNs via FCM). One integration for both platforms.",
+
+    "show_in_app_popup_when_active": true,
+    "_comment_popup": "If app is open when push arrives, show accept/decline popup instead of system notification.",
+    "accept_label_key": "push_task.accept",
+    "reject_label_key": "push_task.reject",
+    "popup_title_key": "push_task.popup_title",
+
+    "on_accept_navigate_to": "schedule_screen",
+    "_comment_accept": "Accept → schedule screen prepopulated with pushed task values. User can modify all fields.",
+    "on_reject_save_as": "rejected",
+    "_comment_reject": "Rejected push tasks saved with status 'rejected' in Isar for analytics.",
+
+    "on_notification_tap_when_background": "schedule_screen",
+    "_comment_background": "App in background, user taps notification → navigate to schedule screen.",
+    "on_notification_tap_when_killed": "schedule_screen",
+    "_comment_killed": "App killed, user taps notification → app opens → navigate to schedule screen.",
+
+    "prepopulate_schedule_from_push_payload": true,
+    "_comment_prepopulate": "Push payload contains task repeat, time, reminders. These are used to prepopulate schedule screen.",
+    "user_can_modify_prepopulated_values": true,
+    "_comment_modify": "User can change any prepopulated value before saving. Confirmed requirement.",
+
+    "fallback_value_resolution": ["user_preferences", "task_config", "global_config"],
+    "_comment_fallback": "If push payload is missing a field, resolve through standard config hierarchy.",
+
+    "include_in_message_centre": true,
+    "push_task_source_label": "push_server"
+  }
+}

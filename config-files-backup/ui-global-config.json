@@ -1,0 +1,333 @@
+{
+  "_metadata": {
+    "_comment": "ui-global-config.json — Animations, welcome screen, setup wizard, account screen, locations, household, vehicles, and user preferences screen.",
+    "_comment_2": "Namespaces: ui.*, animation.*, welcome.*, setup_wizard.*, account.*, location.*, household.*, vehicle.*, preferences.*",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "product"
+  },
+
+  "animation": {
+    "_comment": "Master animation controls. Detailed timing and curves are in theme-config.json.",
+
+    "enabled": true,
+    "_comment_enabled": "Global on/off for ALL animations. Set false for accessibility or low-end devices.",
+
+    "respect_system_reduce_motion": true,
+    "_comment_system": "If device 'Reduce Motion' accessibility setting is on, disable animations automatically.",
+
+    "task_complete_animation": true,
+    "_comment_task": "Strike-through and slide-to-bottom animation when task is checked.",
+
+    "schedule_success_animation": true,
+    "_comment_schedule": "Celebration animation when a task is saved on schedule screen.",
+
+    "points_earn_animation": true,
+    "_comment_points": "Points bubble animation when points are earned.",
+
+    "page_transition_animation": true,
+    "_comment_page": "Animated transitions between screens.",
+
+    "list_item_enter_animation": true,
+    "_comment_list": "List items animate in when a screen loads.",
+
+    "effects": {
+      "task_complete": "strikethrough_and_slide",
+      "_comment_task_effect": "Options: 'strikethrough_and_slide' | 'fade_and_slide' | 'none'",
+      "schedule_success": "confetti_burst",
+      "_comment_schedule_effect": "Options: 'confetti_burst' | 'checkmark_scale' | 'none'",
+      "points_earn": "bubble_pop",
+      "_comment_points_effect": "Options: 'bubble_pop' | 'slide_up' | 'none'",
+      "setup_wizard_complete": "confetti_burst",
+      "_comment_wizard_effect": "Animation shown when user completes setup wizard."
+    }
+  },
+
+  "welcome": {
+    "_comment": "Welcome screen content and navigation flow.",
+
+    "headline_message_key": "welcome.headline",
+    "subheadline_message_key": "welcome.subheadline",
+    "notification_importance_message_key": "welcome.notification_message",
+    "get_started_label_key": "welcome.get_started",
+
+    "show_theme_picker": true,
+    "_comment_theme": "Show 5 theme preview cards so user personalises the app before anything else.",
+    "theme_picker_title_key": "welcome.theme_picker_title",
+
+    "show_language_picker": true,
+    "language_picker_position": "top_right",
+    "_comment_lang_position": "Language selector top-right so non-English speakers can switch before reading anything.",
+
+    "request_notification_permission": true,
+    "_comment_permission": "Request OS notification permission on welcome screen with explanation of importance.",
+    "notification_permission_rationale_key": "welcome.notification_rationale",
+
+    "flow": {
+      "get_started_leads_to": "setup_wizard",
+      "_comment_flow": "Get Started → Setup Wizard → (Dashboard if tasks exist) or (Category Screen if no tasks).",
+      "after_wizard_with_tasks": "dashboard",
+      "after_wizard_no_tasks": "category_screen",
+      "returning_user_signed_in": "dashboard",
+      "_comment_returning": "If returning user signs in on welcome screen, skip setup wizard → go to dashboard.",
+      "setup_wizard_completed_flag": "setup_completed"
+    }
+  },
+
+  "setup_wizard": {
+    "_comment": "Setup wizard global settings. Question content, sequence, and answers are in setup-config.json.",
+
+    "enabled": true,
+    "show_progress_indicator": true,
+    "progress_style": "dots",
+    "_comment_progress": "Options: 'dots' | 'bar' | 'steps'.",
+    "allow_skip_all": true,
+    "_comment_skip": "Every question is optional. User can skip any or all questions.",
+    "skip_label_key": "setup_wizard.skip",
+    "next_label_key": "setup_wizard.next",
+    "finish_label_key": "setup_wizard.finish",
+    "back_label_key": "setup_wizard.back",
+
+    "persist_answers_on_next": true,
+    "_comment_persist": "Each time user taps Next, selected answers are saved to Isar under user_preferences immediately.",
+
+    "completed_flag_key": "setup_completed",
+    "_comment_flag": "Stored in user_preferences. If true, setup wizard is never shown again on launch.",
+
+    "show_celebration_on_complete": true,
+    "celebration_effect": "confetti_burst",
+
+    "re_accessible_from": "account_preferences",
+    "_comment_re_access": "User can re-run setup wizard from Account → Preferences to update their answers.",
+
+    "question_content_source": "setup-config.json",
+    "_comment_source": "All question text, explanation, answer options, and sequence loaded from setup-config.json."
+  },
+
+  "account": {
+    "_comment": "Account screen section definitions and visibility rules.",
+
+    "screen_title_key": "account.title",
+
+    "sections_order": [
+      "user_identity",
+      "points_summary",
+      "subscription",
+      "preferences_link",
+      "support",
+      "legal",
+      "danger_zone"
+    ],
+
+    "user_identity": {
+      "show_email": true,
+      "show_auth_provider_badge": true,
+      "auth_provider_badges": {
+        "google":      { "label": "Google",     "icon": "google_logo" },
+        "apple":       { "label": "Apple",      "icon": "apple_logo" },
+        "magic_link":  { "label": "Magic Link", "icon": "email_outline" }
+      },
+      "guest_label_key": "account.guest_label",
+      "_comment_guest": "Label shown when user is not registered."
+    },
+
+    "points_summary": {
+      "show_current_balance": true,
+      "show_lifetime_total": true,
+      "show_progress_bar": true,
+      "show_next_milestone_label": true,
+      "show_points_history_link": true,
+      "points_history_leads_to": "task_history_screen"
+    },
+
+    "subscription": {
+      "show_current_tier": true,
+      "show_expiry_date": true,
+      "show_unlock_premium_cta": true,
+      "_comment_cta": "CTA shown only if user is not premium.",
+      "unlock_cta_key": "subscription.unlock_cta",
+      "expiry_warning_days": 7,
+      "_comment_expiry": "Show expiry warning badge this many days before subscription ends."
+    },
+
+    "support": {
+      "show_support_link": true,
+      "support_label_key": "account.support",
+      "support_url_source": "app-global-config.app.feedback_url"
+    },
+
+    "legal": {
+      "show_privacy_policy": true,
+      "show_terms": true,
+      "privacy_policy_label_key": "account.privacy_policy",
+      "terms_label_key": "account.terms"
+    },
+
+    "danger_zone": {
+      "show_logout": true,
+      "logout_label_key": "account.logout",
+      "show_delete_account": true,
+      "delete_account_label_key": "account.delete_account",
+      "delete_confirmation_steps": 2,
+      "_comment_gdpr": "Delete account fulfils GDPR Article 17 right to erasure. Two confirmation steps prevent accidents.",
+      "delete_confirmation_message_key": "account.delete.confirm_message",
+      "delete_final_warning_key": "account.delete.final_warning",
+      "delete_success_message_key": "account.delete.success"
+    }
+  },
+
+  "location": {
+    "_comment": "Default location options for setup wizard Q3 and user preferences screen.",
+    "_comment_2": "Values are i18n keys — never raw strings.",
+
+    "default_locations_keys": [
+      "location.living_room",
+      "location.bedroom",
+      "location.kitchen",
+      "location.bathroom",
+      "location.hallway",
+      "location.garage",
+      "location.garden",
+      "location.loft",
+      "location.utility_room",
+      "location.dining_room",
+      "location.home_office",
+      "location.conservatory",
+      "location.shed",
+      "location.driveway"
+    ],
+
+    "allow_custom_locations": true,
+    "_comment_custom": "User can type and add custom locations not in the default list.",
+    "custom_location_add_label_key": "location.add_custom",
+    "custom_location_placeholder_key": "location.custom_placeholder",
+
+    "backend_sync_custom_locations": true,
+    "_comment_sync": "Custom locations pushed to backend for product team review — improves defaults for all users.",
+    "backend_sync_method": "stub",
+    "_comment_stub": "Backend not yet built. Use empty stub method. Will be wired up when backend is ready.",
+
+    "location_intersection_with_task_config": true,
+    "_comment_intersection": "On schedule screen, only show locations present in BOTH task config AND user's home setup."
+  },
+
+  "household": {
+    "_comment": "Household age group options. Used in setup wizard Q2.",
+    "_comment_2": "In future releases, age groups filter which task categories and tasks are visible.",
+
+    "screen_title_key": "household.screen_title",
+    "multi_select": true,
+    "_comment_multi": "User can select multiple age groups — households often have mixed ages.",
+
+    "age_groups": [
+      {
+        "id": "under_5",
+        "label_key": "household.age.under_5",
+        "icon": "👶",
+        "_comment": "Unlocks baby/toddler task categories in future."
+      },
+      {
+        "id": "5_to_12",
+        "label_key": "household.age.5_to_12",
+        "icon": "🧒",
+        "_comment": "School-age children. Unlocks school-related task categories."
+      },
+      {
+        "id": "13_to_17",
+        "label_key": "household.age.13_to_17",
+        "icon": "🧑",
+        "_comment": "Teenagers."
+      },
+      {
+        "id": "18_to_60",
+        "label_key": "household.age.18_to_60",
+        "icon": "🧑‍💼",
+        "_comment": "Working-age adults. Core user demographic."
+      },
+      {
+        "id": "over_60",
+        "label_key": "household.age.over_60",
+        "icon": "🧓",
+        "_comment": "Seniors. May unlock health and medication task categories."
+      }
+    ],
+
+    "reserved_data_model_fields": ["household_age_groups", "assigned_to", "group_id"],
+    "_comment_reserved": "assigned_to and group_id reserved for future social task sharing. Nullable. Ignored by app today."
+  },
+
+  "vehicle": {
+    "_comment": "Vehicle types captured in setup wizard Q5.",
+
+    "types": ["car", "motorbike", "cycle"],
+
+    "type_label_keys": {
+      "car":       "vehicle.car",
+      "motorbike": "vehicle.motorbike",
+      "cycle":     "vehicle.cycle"
+    },
+
+    "type_icons": {
+      "car":       "directions_car",
+      "motorbike": "two_wheeler",
+      "cycle":     "pedal_bike"
+    },
+
+    "reg_required_for": ["car", "motorbike"],
+    "_comment_reg": "DVLA API lookup applies to cars and motorbikes only. Cycles have no reg plate.",
+
+    "max_vehicles_per_type": 5,
+    "_comment_max": "How many vehicles of each type a user can register.",
+
+    "cycle_service_interval_months": 12,
+    "_comment_cycle": "Cycles get a periodic service reminder at this interval. No DVLA lookup needed.",
+    "cycle_service_task_key": "task.vehicle.cycle_service",
+
+    "dvla_lookup_on_reg_entry": true,
+    "_comment_dvla": "As soon as user enters a reg plate and taps next, DVLA lookup is triggered.",
+    "dvla_result_confirm_with_user": true,
+    "_comment_confirm": "API result shown on Smart Task Confirmation screen before tasks are created."
+  },
+
+  "preferences": {
+    "_comment": "User preferences screen sections. Add new sections here as features grow.",
+
+    "screen_title_key": "preferences.screen_title",
+
+    "sections": [
+      "daily_timings",
+      "locations",
+      "reminders",
+      "notifications",
+      "language",
+      "theme",
+      "text_size",
+      "timezone",
+      "postcode",
+      "whatsapp_number",
+      "job_time"
+    ],
+
+    "_comment_extensible": "New sections added here appear on preferences screen automatically.",
+
+    "preferred_reminder_options_minutes": [2, 5, 10, 15, 30, 60],
+    "_comment_reminders": "Options shown in preferred reminders section. User selects their global defaults.",
+
+    "text_size_options": ["small", "medium", "large"],
+    "text_size_default": "medium",
+    "text_size_labels_keys": {
+      "small":  "preferences.text_size.small",
+      "medium": "preferences.text_size.medium",
+      "large":  "preferences.text_size.large"
+    },
+
+    "notification_sub_sections": [
+      "morning_summary",
+      "evening_summary",
+      "weather_summary",
+      "missed_task",
+      "point_milestone"
+    ],
+    "_comment_notifications": "Each sub-section has an on/off toggle. Preferences stored in user_preferences Isar collection."
+  }
+}

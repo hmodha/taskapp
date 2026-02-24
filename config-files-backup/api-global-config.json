@@ -1,0 +1,244 @@
+{
+  "_metadata": {
+    "_comment": "api-global-config.json — External API integrations: weather, DVLA, bin collection, GP (future).",
+    "_comment_2": "Namespaces: api.*, smart_confirm.*",
+    "_comment_3": "API credentials (keys, secrets) are NEVER stored in this file. Use secure environment config / Flutter Envied package.",
+    "_comment_4": "All API calls must be wrapped in try/catch with graceful offline fallback.",
+    "_comment_5": "If offline, queue the lookup in Isar as api_lookup_pending and retry when connectivity restored.",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "platform"
+  },
+
+  "api": {
+    "_comment": "Global API behaviour settings applying to all integrations.",
+
+    "offline_behaviour": "queue_and_cache",
+    "_comment_offline": "Options: 'queue_and_cache' | 'silent_fail'. Always degrade gracefully — never show raw errors to user.",
+
+    "offline_message_key": "api.offline_message",
+    "_comment_message": "User-friendly message shown when offline and API call is queued.",
+
+    "global_timeout_seconds": 10,
+    "_comment_timeout": "Default timeout for all API calls. Overridden per integration below.",
+
+    "global_retry_attempts": 2,
+    "_comment_retry": "Number of retry attempts on timeout or 5xx errors before queuing as pending.",
+
+    "retry_backoff_seconds": [2, 5],
+    "_comment_backoff": "Wait these many seconds between retry attempts. Length must match global_retry_attempts.",
+
+    "pending_api_queue": {
+      "_comment": "When offline or API fails after retries, lookups are queued in Isar.",
+      "isar_collection": "PendingApiLookup",
+      "fields": [
+        "id",
+        "api_type",
+        "payload",
+        "created_at",
+        "status",
+        "retry_count",
+        "last_retry_at"
+      ],
+      "status_values": ["pending", "in_progress", "completed", "failed"],
+      "retry_on_app_open": true,
+      "retry_on_connectivity_restored": true,
+      "_comment_retry": "App listens for connectivity changes and auto-retries pending lookups.",
+      "confirm_results_with_user": true,
+      "_comment_confirm": "When a pending lookup resolves, show Smart Task Confirmation screen before creating any tasks.",
+      "max_retry_count": 5,
+      "_comment_max": "After 5 failed retries, mark as failed and notify user to check manually."
+    },
+
+    "weather": {
+      "_comment": "Weather API — used for daily weather summary notification.",
+      "enabled": true,
+
+      "primary": {
+        "provider": "met_office",
+        "base_url": "https://api-proxy.met.no/weatherapi",
+        "_comment": "Met Office DataHub — UK's most accurate weather provider. Used by BBC.",
+        "api_key_env_var": "MET_OFFICE_API_KEY",
+        "_comment_key": "API key loaded from secure environment. Never hardcoded.",
+        "timeout_seconds": 10,
+        "endpoints": {
+          "forecast": "/locationforecast/2.0/compact",
+          "pollen": "/pollenforecast/2.0"
+        }
+      },
+
+      "fallback": {
+        "provider": "open_meteo",
+        "base_url": "https://api.open-meteo.com/v1",
+        "_comment": "Open-Meteo — free, no API key, good UK coverage. Used when Met Office unreachable.",
+        "timeout_seconds": 8,
+        "endpoints": {
+          "forecast": "/forecast"
+        },
+        "params": {
+          "hourly": "precipitation_probability,uv_index",
+          "daily": "precipitation_probability_max,uv_index_max",
+          "timezone": "Europe/London"
+        }
+      },
+
+      "cache_duration_minutes": 60,
+      "_comment_cache": "Store last successful API response in Isar. Used if API unreachable at notification time.",
+      "isar_cache_collection": "WeatherCache",
+
+      "response_fields_used": [
+        "precipitation_probability",
+        "uv_index",
+        "pollen_level"
+      ],
+
+      "condition_thresholds": {
+        "_comment": "Threshold values for triggering weather suggestions. Mirrors notification-global-config.json for reference.",
+        "rain_probability_percent": 60,
+        "uv_index_high": 6,
+        "pollen_high_level": "high",
+        "pollen_enabled_months": [3, 4, 5, 6, 7, 8, 9]
+      }
+    },
+
+    "dvla": {
+      "_comment": "DVLA Vehicle Enquiry API — MOT and road tax lookups from car/motorbike reg plates.",
+      "enabled": true,
+      "base_url": "https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles",
+      "_comment_url": "DVLA free API. Requires API key from DVLA developer portal.",
+      "api_key_env_var": "DVLA_API_KEY",
+      "timeout_seconds": 10,
+      "cache_duration_hours": 24,
+      "_comment_cache": "Cache DVLA response for 24 hours — data doesn't change frequently.",
+
+      "request_method": "POST",
+      "request_body_template": {
+        "registrationNumber": "{reg_plate}"
+      },
+
+      "fields_fetched": [
+        "motStatus",
+        "motExpiryDate",
+        "taxStatus",
+        "taxDueDate",
+        "make",
+        "colour",
+        "yearOfManufacture",
+        "engineCapacity",
+        "fuelType"
+      ],
+
+      "tasks_created": {
+        "mot_reminder": {
+          "task_config_id": "vehicle.mot_reminder",
+          "_comment": "Must exist as a task in master-tasks-config.json.",
+          "days_before_expiry_to_remind": 30,
+          "custom_title_template": "{make} MOT — {reg_plate}"
+        },
+        "road_tax_reminder": {
+          "task_config_id": "vehicle.road_tax_reminder",
+          "days_before_expiry_to_remind": 30,
+          "custom_title_template": "{make} Tax — {reg_plate}"
+        }
+      },
+
+      "applies_to_vehicle_types": ["car", "motorbike"],
+      "_comment_applies": "DVLA API only covers cars and motorbikes. Cycles have no reg.",
+
+      "source_label": "dvla_api",
+      "_comment_source": "Value stored in task.source field when task is created from DVLA lookup."
+    },
+
+    "bin_collection": {
+      "_comment": "UK bin collection API — determines bin day by postcode for bin reminder tasks.",
+      "enabled": true,
+
+      "primary": {
+        "provider": "council_api",
+        "_comment": "Individual council APIs where available. Provider logic determined by postcode area.",
+        "timeout_seconds": 10
+      },
+
+      "fallback": {
+        "provider": "getmybinday",
+        "base_url": "https://api.getmybinday.co.uk/v1",
+        "_comment": "Third-party aggregator covering most UK postcodes. Used when council API unavailable.",
+        "api_key_env_var": "GETMYBINDAY_API_KEY",
+        "timeout_seconds": 10
+      },
+
+      "cache_duration_hours": 168,
+      "_comment_cache": "168 hours = 1 week. Bin schedules change rarely.",
+
+      "tasks_created": {
+        "bin_collection_reminder": {
+          "task_config_id": "home.bin_collection",
+          "reminder_hours_before": 12,
+          "_comment": "Reminder fires 12 hours before bin collection day. e.g. night before.",
+          "custom_title_template": "{bin_type} Bin — {collection_day}"
+        }
+      },
+
+      "source_label": "bin_api",
+      "requires_postcode_or_location": true,
+      "_comment_postcode": "Requires either GPS location or manually entered postcode from user preferences.",
+      "offline_queue_field": "postcode_or_coords"
+    },
+
+    "gp_appointment": {
+      "_comment": "GP appointment integration — FUTURE requirement. Stub with empty methods now.",
+      "enabled": false,
+      "_comment_enabled": "Set to true when GP API integration is built. feature_flags.enable_gp_appointments must also be true.",
+      "base_url": "",
+      "_comment_url": "To be defined when GP API provider is selected.",
+      "timeout_seconds": 10,
+
+      "tasks_created": {
+        "gp_appointment_reminder": {
+          "task_config_id": "health.gp_appointment",
+          "_comment": "Must exist in master-tasks-config.json under health category."
+        }
+      },
+
+      "prepopulate_schedule_screen": true,
+      "_comment_prepopulate": "Same pattern as DVLA — API response prepopulates schedule screen, user confirms.",
+      "source_label": "gp_api"
+    }
+  },
+
+  "smart_confirm": {
+    "_comment": "Smart Task Confirmation screen — shown after API lookups resolve with suggested tasks.",
+    "_comment_2": "User reviews, edits, and confirms or rejects each suggested task before it is saved.",
+
+    "screen_title_key": "smart_confirm.title",
+    "subtitle_key": "smart_confirm.subtitle",
+    "accept_all_label_key": "smart_confirm.accept_all",
+    "review_individual_label_key": "smart_confirm.review_each",
+    "reject_all_label_key": "smart_confirm.reject_all",
+
+    "on_accept_individual": "open_schedule_screen",
+    "_comment_accept": "Accepting a single task opens schedule screen prepopulated. User can modify before saving.",
+
+    "on_accept_all": "batch_open_schedule_screens",
+    "_comment_accept_all": "Accept all opens schedule screens one at a time for each suggested task.",
+
+    "sources": {
+      "dvla_api": {
+        "section_title_key": "smart_confirm.source.dvla",
+        "icon": "directions_car"
+      },
+      "bin_api": {
+        "section_title_key": "smart_confirm.source.bin",
+        "icon": "delete_outline"
+      },
+      "gp_api": {
+        "section_title_key": "smart_confirm.source.gp",
+        "icon": "local_hospital"
+      },
+      "push_server": {
+        "section_title_key": "smart_confirm.source.server",
+        "icon": "cloud_download"
+      }
+    }
+  }
+}

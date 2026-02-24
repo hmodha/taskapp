@@ -1,0 +1,177 @@
+{
+  "_metadata": {
+    "_comment": "dashboard-global-config.json — All dashboard screen behaviour, list sizes, snooze, reschedule, task completion, and task history.",
+    "_comment_2": "Namespaces: dashboard.*, snooze.*, reschedule.*, task.completion.*, task.history.*",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "product"
+  },
+
+  "dashboard": {
+    "_comment": "Dashboard screen — three lists: today, tomorrow, upcoming.",
+
+    "today_list": {
+      "_comment": "Today's task list — acts as an action list. Tasks shown in chronological order.",
+      "section_title_key": "dashboard.today.title",
+      "all_tasks_label_key": "dashboard.today.all_tasks",
+      "show_more_label_key": "dashboard.today.show_more",
+      "empty_state_key": "dashboard.today.empty",
+      "initial_visible_count": 5,
+      "_comment_count": "Max tasks shown before Show More link. Configurable.",
+      "load_more_count": 5,
+      "_comment_load_more": "Additional tasks loaded per Show More tap.",
+      "sort_order": "chronological",
+      "_comment_sort": "Tasks shown in time order. Completed tasks move to bottom regardless of time.",
+      "show_checkbox": true,
+      "show_time": true,
+      "show_custom_title_bubble": true,
+      "_comment_bubble": "If user gave task a custom title, shown as a smaller label beneath the task name.",
+      "missed_task_indicator_emoji": "😢",
+      "_comment_missed": "Shown before checkbox when task time has passed and task is not completed.",
+      "missed_task_visibility": "until_sleep_or_midnight",
+      "_comment_visibility": "Missed tasks remain visible until user sleep time, or midnight if sleep time not configured.",
+      "missed_task_fallback": "midnight",
+      "_comment_fallback": "Used when sleep time is not configured in user preferences.",
+      "multiple_times_display": "individual_rows",
+      "_comment_times": "Tasks with multiple daily times are shown as separate rows, each with their own checkbox.",
+      "completed_move_to": "bottom",
+      "_comment_completed": "Completed tasks strike through and animate to the bottom of today's list.",
+      "show_snooze_option": true,
+      "show_skip_option": true,
+      "points_earned_on_completion": 1,
+      "_comment_points": "Resolved from points-global-config.json. Duplicated here as display reference only."
+    },
+
+    "tomorrow_list": {
+      "_comment": "Tomorrow's task list — consolidated view, no checkboxes, reschedule and skip only.",
+      "section_title_key": "dashboard.tomorrow.title",
+      "all_tasks_label_key": "dashboard.tomorrow.all_tasks",
+      "show_more_label_key": "dashboard.tomorrow.show_more",
+      "empty_state_key": "dashboard.tomorrow.empty",
+      "initial_visible_count": 3,
+      "load_more_count": 3,
+      "consolidated_view": true,
+      "_comment_consolidated": "Multiple daily times for the same task shown as a single entry.",
+      "show_checkbox": false,
+      "show_time": true,
+      "show_custom_title_bubble": true,
+      "show_reschedule_option": true,
+      "show_skip_option": true,
+      "reschedule_allows_past": false,
+      "_comment_past": "Users cannot reschedule a task to a past date."
+    },
+
+    "upcoming_list": {
+      "_comment": "Upcoming task list — monthly, quarterly, yearly tasks only. Next 3 months.",
+      "section_title_key": "dashboard.upcoming.title",
+      "all_tasks_label_key": "dashboard.upcoming.all_tasks",
+      "show_more_label_key": "dashboard.upcoming.show_more",
+      "empty_state_key": "dashboard.upcoming.empty",
+      "initial_visible_count": 3,
+      "load_more_count": 3,
+      "lookahead_months": 3,
+      "_comment_lookahead": "How far ahead to scan for upcoming tasks.",
+      "included_frequencies": ["monthly", "quarterly", "yearly"],
+      "_comment_included": "Weekly and daily tasks intentionally excluded. Confirmed requirement.",
+      "excluded_frequencies": ["daily", "weekly", "biweekly"],
+      "hide_section_when_empty": true,
+      "_comment_hide": "If no upcoming tasks in the lookahead window, entire section is hidden.",
+      "show_time": true,
+      "show_custom_title_bubble": true
+    },
+
+    "no_tasks_redirect": "category_screen",
+    "_comment_redirect": "If user has zero tasks configured, redirect to category screen instead of empty dashboard.",
+
+    "fab": {
+      "_comment": "Floating Action Button — bottom right corner of dashboard.",
+      "enabled": true,
+      "icon": "add",
+      "navigate_to": "category_screen",
+      "_comment_navigate": "FAB leads to category screen for minimum-taps task creation.",
+      "position": "bottom_right"
+    }
+  },
+
+  "snooze": {
+    "_comment": "Snooze options for today's incomplete tasks. Values in minutes.",
+    "options_minutes": [5, 10, 15, 30, 60, 120, 180, 360],
+    "options_labels_keys": [
+      "snooze.5m",
+      "snooze.10m",
+      "snooze.15m",
+      "snooze.30m",
+      "snooze.1h",
+      "snooze.2h",
+      "snooze.3h",
+      "snooze.6h"
+    ],
+    "_comment_labels": "i18n keys for snooze chip labels. Must match options_minutes array in order.",
+    "update_os_alarm_on_snooze": true,
+    "_comment_alarm": "If an OS alarm was set for this task, cancel and reschedule it after snooze.",
+    "save_snooze_in_history": true,
+    "_comment_history": "Record snooze events in task history for future analytics.",
+    "snooze_count_limit": -1,
+    "_comment_limit": "-1 = unlimited snoozes. Set a positive integer to cap snooze count per task per day."
+  },
+
+  "reschedule": {
+    "_comment": "Reschedule behaviour for tomorrow and upcoming tasks.",
+    "allow_reschedule_to_past": false,
+    "update_os_alarm_on_reschedule": true,
+    "save_original_schedule_in_history": true,
+    "_comment_history": "When rescheduled, the original scheduled time is preserved in task history.",
+    "reschedule_screen_title_key": "reschedule.screen_title",
+    "reschedule_confirm_label_key": "reschedule.confirm",
+    "reschedule_cancel_label_key": "reschedule.cancel"
+  },
+
+  "task_completion": {
+    "_comment": "Rules governing how task completion is recorded, displayed, and reversed.",
+    "points_per_completion": 1,
+    "_comment_points": "1 point per completed task. Source of truth is points-global-config.json.",
+    "move_completed_to_bottom": true,
+    "animate_completion": true,
+    "_comment_animate": "Respects ui-global-config.json animations.enabled master switch.",
+    "completion_animation_effect": "strikethrough_and_slide",
+    "allow_untick_within_days": 30,
+    "_comment_untick": "Users can undo a completion for tasks completed within this many days.",
+    "untick_warning_key": "task.completion.untick_warning",
+    "_comment_warning": "Warning shown when unticking: explains user will lose 1 point.",
+    "point_deduction_on_untick": true,
+    "skip_status_value": "skipped",
+    "_comment_skip": "Value stored in Isar task_logs collection when user taps Skip.",
+    "missed_status_value": "missed",
+    "completed_status_value": "completed"
+  },
+
+  "task_history": {
+    "_comment": "Task history screen — grouped by date, filterable, editable within window.",
+    "screen_title_key": "task.history.screen_title",
+    "summary_message_key": "task.history.summary_message",
+    "_comment_summary": "1-2 line motivational summary at top of history screen. Template in notification-config.json.",
+    "default_filter": "all",
+    "filters": ["all", "completed", "missed", "skipped"],
+    "filter_labels_keys": [
+      "history.filter.all",
+      "history.filter.completed",
+      "history.filter.missed",
+      "history.filter.skipped"
+    ],
+    "filter_style": "whatsapp_chips",
+    "_comment_style": "Horizontal scrollable chip bar — same style as WhatsApp chat filters.",
+    "group_by": "date",
+    "sort_order": "descending",
+    "_comment_sort": "Most recent dates shown first.",
+    "date_row_format_key": "history.date_row_format",
+    "_comment_date_format": "e.g. 'Monday 23 February'. Follows active language date conventions.",
+    "editable_window_days": 30,
+    "_comment_editable": "Tasks within this many days can be ticked/unticked.",
+    "points_bubble_earned": "1",
+    "points_bubble_not_earned": "0",
+    "show_skipped_tasks": true,
+    "show_points_bubble": true,
+    "retention_months": 24,
+    "_comment_retention": "Task history retained in Isar for this many months before archiving."
+  }
+}

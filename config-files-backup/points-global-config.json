@@ -1,0 +1,112 @@
+{
+  "_metadata": {
+    "_comment": "points-global-config.json — Points system rules, audit log structure, subscription thresholds, and milestone behaviour.",
+    "_comment_2": "Namespaces: points.*, milestone.*",
+    "_comment_3": "Points are stored as an IMMUTABLE audit log in Isar — never update existing records, only append.",
+    "_comment_4": "The points balance displayed to users is always computed by summing the audit log, never stored as a raw counter.",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "product"
+  },
+
+  "points": {
+    "_comment": "Core points system configuration.",
+
+    "points_per_task_completion": 1,
+    "_comment_per_task": "Points awarded for each individual task completion. Applies to all tasks.",
+
+    "point_deduction_on_untick": true,
+    "_comment_deduction": "If user unticks a completed task (within editable window), 1 point is deducted.",
+
+    "untick_warning_key": "points.untick_warning",
+    "_comment_warning": "Warning message shown before untick is confirmed: explains 1 point will be deducted.",
+
+    "guest_points_local_only": true,
+    "_comment_guest": "Guest user points stored in Isar only. Migrated to server account on registration.",
+
+    "points_sync_on_register": true,
+    "_comment_sync": "On registration, all local guest points are migrated to the user's server account.",
+
+    "audit_log": {
+      "_comment": "Every point earned or deducted is recorded as an immutable transaction in Isar.",
+      "_comment_2": "Balance = SUM of all audit log entries for the user. Never store balance as a raw field.",
+      "isar_collection": "PointsTransaction",
+      "fields": [
+        "id",
+        "user_id",
+        "task_id",
+        "task_name",
+        "points",
+        "action",
+        "timestamp",
+        "notes"
+      ],
+      "action_values": ["earn", "deduct"],
+      "_comment_action": "'earn' for task completion. 'deduct' for untick within editable window.",
+      "immutable": true,
+      "_comment_immutable": "Audit log records are NEVER updated or deleted. Append-only.",
+      "retention_months": 24
+    },
+
+    "balance_calculation": {
+      "_comment": "How the displayed points balance is computed.",
+      "method": "sum_audit_log",
+      "_comment_method": "Balance = SUM(points) across all audit log entries for the user.",
+      "cache_balance_in_memory": true,
+      "_comment_cache": "Cache computed balance in memory during session. Invalidate on each new transaction.",
+      "show_lifetime_total": true,
+      "show_current_balance": true,
+      "_comment_current": "Current balance factors in deductions. Lifetime total is earn-only."
+    },
+
+    "retention_months": 24,
+    "_comment_retention": "How many months of points history to retain in Isar before archiving."
+  },
+
+  "milestone": {
+    "_comment": "Points milestone thresholds and premium reward mapping.",
+
+    "thresholds": {
+      "_comment": "Maps point totals to premium subscription months. Add new tiers without code changes.",
+      "300": {
+        "premium_months": 3,
+        "reward_message_key": "milestone.300.reward_message"
+      },
+      "500": {
+        "premium_months": 6,
+        "reward_message_key": "milestone.500.reward_message"
+      },
+      "900": {
+        "premium_months": 12,
+        "reward_message_key": "milestone.900.reward_message"
+      }
+    },
+
+    "check_frequency": "weekly",
+    "_comment_check": "Milestone check runs weekly. Day configured in notification-global-config.json point_milestone section.",
+
+    "notify_on_milestone_reached": true,
+    "notify_encouragement_if_no_milestone": true,
+    "_comment_encouragement": "If no new milestone this week, send an encouragement notification instead of silence.",
+    "encouragement_message_key": "milestone.weekly_encouragement",
+
+    "progress_bar": {
+      "_comment": "Points progress bar shown on account screen.",
+      "show": true,
+      "show_next_milestone_label": true,
+      "show_points_to_next": true,
+      "_comment_to_next": "e.g. '142 points to free Premium'.",
+      "next_milestone_label_key": "milestone.progress_bar.next_milestone_label"
+    },
+
+    "premium_activation": {
+      "_comment": "How premium is activated when user reaches a milestone.",
+      "requires_user_confirmation": true,
+      "_comment_confirm": "User taps 'Claim Premium' on account screen or notification. Not auto-activated.",
+      "claim_cta_key": "milestone.claim_cta",
+      "claim_success_message_key": "milestone.claim_success",
+      "expiry_extension": true,
+      "_comment_extension": "If user already has premium, reaching a milestone extends their expiry rather than restarting it."
+    }
+  }
+}

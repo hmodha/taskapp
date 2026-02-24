@@ -1,0 +1,92 @@
+{
+  "_metadata": {
+    "_comment": "alarm-global-config.json — OS-level alarm configuration, platform support, and pre-scheduling behaviour.",
+    "_comment_2": "Namespace: alarm.*",
+    "_comment_3": "Alarms differ from notifications: alarms can bypass device silent mode on Android.",
+    "_comment_4": "iOS does not support true OS alarms — see platform_support for graceful handling.",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "platform"
+  },
+
+  "alarm": {
+    "_comment": "OS-level alarm settings.",
+
+    "enabled": true,
+    "_comment_enabled": "Master switch for alarm functionality. If false, alarm option hidden on schedule screen.",
+
+    "flutter_package": "flutter_local_notifications",
+    "_comment_package": "Use flutter_local_notifications for both alarms and standard notifications. Handles platform differences.",
+
+    "per_task_alarm_toggle": true,
+    "_comment_per_task": "Each task on the schedule screen has its own alarm on/off toggle.",
+    "default_alarm_enabled_per_task": false,
+    "_comment_default": "Alarm is opt-in per task. Off by default — most tasks don't need to bypass silent mode.",
+
+    "pre_schedule_days": 7,
+    "_comment_pre": "When a task is saved, alarms are pre-created on device for the next 7 days.",
+    "_comment_pre_2": "This is necessary because both iOS and Android limit background wake-ups.",
+    "_comment_pre_3": "App also re-schedules alarms on launch if any are stale or missing.",
+
+    "reschedule_on_app_open": true,
+    "_comment_reopen": "On every app open, check and refresh alarms for next pre_schedule_days window.",
+
+    "platform_support": {
+      "android": {
+        "supported": true,
+        "can_bypass_silent_mode": true,
+        "_comment": "Android alarms can ring even when device is on silent. Use ALARM channel in flutter_local_notifications.",
+        "notification_channel_id": "task_alarms",
+        "notification_channel_name": "Task Alarms",
+        "notification_importance": "max",
+        "_comment_importance": "IMPORTANCE_MAX required to bypass DND on Android."
+      },
+      "ios": {
+        "supported": false,
+        "_comment": "iOS does not support true alarms that bypass silent/DND mode via Flutter.",
+        "fallback_behaviour": "standard_notification",
+        "_comment_fallback": "On iOS, alarm selection creates a standard high-priority local notification instead.",
+        "show_ios_limitation_message": true,
+        "ios_limitation_message_key": "alarm.ios_not_supported",
+        "_comment_message": "Show a friendly explanation to iOS users when they enable the alarm toggle."
+      }
+    },
+
+    "update_on_snooze": true,
+    "_comment_snooze": "When user snoozes a task, cancel existing OS alarm and create a new one for the snoozed time.",
+
+    "update_on_reschedule": true,
+    "_comment_reschedule": "When user reschedules a task, cancel existing OS alarm and create one for the new time.",
+
+    "cancel_on_skip": true,
+    "_comment_skip": "When user skips a task occurrence, cancel its pending OS alarm.",
+
+    "cancel_on_task_delete": true,
+    "_comment_delete": "When a task is deleted, cancel all pending OS alarms for that task.",
+
+    "alarm_sound": "default",
+    "_comment_sound": "Options: 'default' | 'custom'. 'default' uses the device alarm sound. Custom requires bundled audio asset.",
+
+    "alarm_vibration": true,
+    "_comment_vibration": "Alarm triggers vibration on Android.",
+
+    "alarm_label_template_key": "alarm.label_template",
+    "_comment_label": "Label shown on OS alarm. Template e.g. '{task_name} — {time}'. i18n key resolved to template string.",
+
+    "isar_tracking": {
+      "_comment": "Scheduled alarms are tracked in Isar so the app can cancel/update them reliably.",
+      "isar_collection": "ScheduledAlarm",
+      "fields": [
+        "id",
+        "task_id",
+        "task_name",
+        "scheduled_datetime",
+        "alarm_id",
+        "platform",
+        "status",
+        "created_at"
+      ],
+      "status_values": ["scheduled", "fired", "cancelled", "snoozed", "skipped"]
+    }
+  }
+}
