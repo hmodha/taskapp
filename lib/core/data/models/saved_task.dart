@@ -1,129 +1,212 @@
-import 'package:isar/isar.dart';
+import 'dart:convert';
 
-part 'saved_task.g.dart';
+import '../app_database.dart';
 
-/// Isar model for a user-configured task.
-///
-/// Fields mirror the task config structure from master-tasks-config.json,
-/// plus runtime fields (source, completion state, reserved social fields).
-@collection
+// ─────────────────────────────────────────────────────────────────────────────
+// SavedTask — domain model used throughout the app (not a DB row directly).
+// Wraps SavedTasksTableData and adds computed helpers + JSON decoding.
+// ─────────────────────────────────────────────────────────────────────────────
+
 class SavedTask {
-  Id id = Isar.autoIncrement;
+  SavedTask({
+    this.id,
+    required this.taskConfigId,
+    required this.categoryId,
+    required this.source,
+    this.taskNameKey,
+    this.taskNameOverride,
+    this.customTitle,
+    required this.repeatOption,
+    required this.scheduledTimes,
+    required this.scheduledWeekdays,
+    this.scheduledYearlyDateMs,
+    required this.scheduledYearlyDatesMs,
+    this.monthlyMode,
+    this.monthlySpecificDate,
+    this.monthlyShortMonthFallback,
+    required this.reminderMinutes,
+    required this.channelApp,
+    required this.channelAlarm,
+    required this.channelEmail,
+    required this.channelWhatsApp,
+    this.locationKey,
+    this.customLocationName,
+    this.linkedTaskConfigId,
+    this.groupId,
+    required this.pointsPerCompletion,
+    required this.homeTimezone,
+    required this.systemTimezoneAtCreation,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.isArchived,
+    this.apiResponseJson,
+  });
 
-  // ── Identity ───────────────────────────────────────────────────────────────
-
-  /// Category ID from category-registry.json e.g. 'vehicle', 'health'.
-  /// 'custom' for user-created tasks not in any category file.
-  @Index()
-  late String categoryId;
-
-  /// Task config ID e.g. 'vehicle.car_mot', 'health.medication'.
-  /// For custom tasks: a user-provided UUID.
-  @Index()
-  late String taskConfigId;
-
-  /// The resolved display name at save time (i18n key resolved to string).
-  late String taskName;
-
-  /// User-defined custom title. Shown as a sub-label in the UI.
-  /// e.g. user names their medication 'Vitamin D'.
+  final int? id;
+  String taskConfigId;
+  String categoryId;
+  String source;
+  String? taskNameKey;
+  String? taskNameOverride;
   String? customTitle;
-
-  // ── Schedule ───────────────────────────────────────────────────────────────
-
-  /// Repeat frequency. One of: never, daily, weekly, biweekly,
-  /// monthly, quarterly, yearly.
-  late String repeatFrequency;
-
-  /// Scheduled times as HH:mm strings.
-  /// Single-time tasks have one entry. Multi-time tasks (e.g. medication) have multiple.
-  late List<String> scheduledTimes;
-
-  /// Days of week for weekly/biweekly repeat.
-  /// Values: monday, tuesday, wednesday, thursday, friday, saturday, sunday.
-  late List<String> scheduledDays;
-
-  /// Scheduled date(s) for monthly/quarterly/yearly repeat.
-  /// Stored as ISO 8601 date strings (yyyy-MM-dd).
-  late List<String> scheduledDates;
-
-  /// For monthly repeat: 'first_day', 'last_day', or 'specific_date'.
-  String? monthlyOption;
-
-  /// For monthly short-month fallback: 'use_last_day' or 'skip_month'.
-  String? shortMonthFallback;
-
-  // ── Location ───────────────────────────────────────────────────────────────
-
-  /// Selected location i18n key or custom location string.
-  /// null = no location (whole home).
+  String repeatOption;
+  List<String> scheduledTimes;
+  List<int> scheduledWeekdays;
+  int? scheduledYearlyDateMs;
+  List<int> scheduledYearlyDatesMs;
+  String? monthlyMode;
+  int? monthlySpecificDate;
+  String? monthlyShortMonthFallback;
+  List<int> reminderMinutes;
+  bool channelApp;
+  bool channelAlarm;
+  bool channelEmail;
+  bool channelWhatsApp;
   String? locationKey;
-
-  // ── Reminders ─────────────────────────────────────────────────────────────
-
-  /// Selected reminder offsets in minutes before task time.
-  /// e.g. [30, 1440] = 30 min and 1 day before.
-  late List<int> reminderMinutes;
-
-  // ── Notification channels ──────────────────────────────────────────────────
-
-  bool notifyViaApp       = true;
-  bool notifyViaAlarm     = false;
-  bool notifyViaEmail     = false;
-  bool notifyViaWhatsapp  = false;
-
-  // ── Source ────────────────────────────────────────────────────────────────
-
-  /// How this task was created.
-  /// One of: manual, dvla_api, bin_api, gp_api, push_server, setup_wizard.
-  @Index()
-  late String source;
-
-  // ── Timezone ──────────────────────────────────────────────────────────────
-
-  /// User's home timezone at time of saving e.g. 'Europe/London'.
-  /// Notifications fire at this timezone regardless of device timezone.
-  late String homeTimezone;
-
-  /// Device timezone at time of saving — used for drift detection.
-  late String systemTimezone;
-
-  // ── Paired tasks ──────────────────────────────────────────────────────────
-
-  /// ID of a paired task (e.g. Bin Out ↔ Bin In).
-  /// null = no paired task.
-  int? pairedTaskId;
-
-  // ── API metadata ──────────────────────────────────────────────────────────
-
-  /// API type that created this task. null for manual tasks.
-  /// One of: dvla, bin_collection, gp, push_server.
-  String? apiType;
-
-  /// Raw API response data stored at creation time (JSON string).
-  /// Used for debugging and future re-processing.
-  String? apiResponseSnapshot;
-
-  // ── Reserved — future social features ────────────────────────────────────
-
-  /// Future: ID of user this task is assigned to.
-  String? assignedTo;
-
-  /// Future: household group ID.
+  String? customLocationName;
+  String? linkedTaskConfigId;
   String? groupId;
+  int pointsPerCompletion;
+  String homeTimezone;
+  String systemTimezoneAtCreation;
+  DateTime createdAt;
+  DateTime updatedAt;
+  bool isArchived;
+  String? apiResponseJson;
 
-  // ── Timestamps ────────────────────────────────────────────────────────────
+  // ── Computed helpers ──────────────────────────────────────────────────────
 
-  @Index()
-  late DateTime createdAt;
+  String get displayName => customTitle ?? taskNameOverride ?? taskConfigId;
+  bool get isCustomTask => categoryId == 'custom';
+  bool get hasLocation => locationKey != null || customLocationName != null;
+  bool get hasMultipleTimes => scheduledTimes.length > 1;
 
-  late DateTime updatedAt;
+  DateTime? get yearlyDate => scheduledYearlyDateMs != null
+      ? DateTime.fromMillisecondsSinceEpoch(scheduledYearlyDateMs!, isUtc: true)
+      : null;
 
-  /// Whether this task is active. false = soft-deleted.
-  bool isActive = true;
+  // ── Conversion to/from DB row ─────────────────────────────────────────────
 
-  // ── Custom task flag ──────────────────────────────────────────────────────
+  factory SavedTask.fromRow(SavedTasksTableData row) {
+    return SavedTask(
+      id: row.id,
+      taskConfigId: row.taskConfigId,
+      categoryId: row.categoryId,
+      source: row.source,
+      taskNameKey: row.taskNameKey,
+      taskNameOverride: row.taskNameOverride,
+      customTitle: row.customTitle,
+      repeatOption: row.repeatOption,
+      scheduledTimes: _decodeStringList(row.scheduledTimesJson),
+      scheduledWeekdays: _decodeIntList(row.scheduledWeekdaysJson),
+      scheduledYearlyDateMs: row.scheduledYearlyDateMs,
+      scheduledYearlyDatesMs: _decodeIntList(row.scheduledYearlyDatesJson),
+      monthlyMode: row.monthlyMode,
+      monthlySpecificDate: row.monthlySpecificDate,
+      monthlyShortMonthFallback: row.monthlyShortMonthFallback,
+      reminderMinutes: _decodeIntList(row.reminderMinutesJson),
+      channelApp: row.channelApp,
+      channelAlarm: row.channelAlarm,
+      channelEmail: row.channelEmail,
+      channelWhatsApp: row.channelWhatsApp,
+      locationKey: row.locationKey,
+      customLocationName: row.customLocationName,
+      linkedTaskConfigId: row.linkedTaskConfigId,
+      groupId: row.groupId,
+      pointsPerCompletion: row.pointsPerCompletion,
+      homeTimezone: row.homeTimezone,
+      systemTimezoneAtCreation: row.systemTimezoneAtCreation,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      isArchived: row.isArchived,
+      apiResponseJson: row.apiResponseJson,
+    );
+  }
 
-  /// true if this task was created by the user, not from a config file.
-  bool isCustom = false;
+  SavedTasksTableCompanion toCompanion() {
+    return SavedTasksTableCompanion.insert(
+      taskConfigId: taskConfigId,
+      categoryId: categoryId,
+      source: source,
+      taskNameKey: Value(taskNameKey),
+      taskNameOverride: Value(taskNameOverride),
+      customTitle: Value(customTitle),
+      repeatOption: repeatOption,
+      scheduledTimesJson: json.encode(scheduledTimes),
+      scheduledWeekdaysJson: json.encode(scheduledWeekdays),
+      scheduledYearlyDateMs: Value(scheduledYearlyDateMs),
+      scheduledYearlyDatesJson: json.encode(scheduledYearlyDatesMs),
+      monthlyMode: Value(monthlyMode),
+      monthlySpecificDate: Value(monthlySpecificDate),
+      monthlyShortMonthFallback: Value(monthlyShortMonthFallback),
+      reminderMinutesJson: json.encode(reminderMinutes),
+      channelApp: Value(channelApp),
+      channelAlarm: Value(channelAlarm),
+      channelEmail: Value(channelEmail),
+      channelWhatsApp: Value(channelWhatsApp),
+      locationKey: Value(locationKey),
+      customLocationName: Value(customLocationName),
+      linkedTaskConfigId: Value(linkedTaskConfigId),
+      groupId: Value(groupId),
+      pointsPerCompletion: Value(pointsPerCompletion),
+      homeTimezone: homeTimezone,
+      systemTimezoneAtCreation: systemTimezoneAtCreation,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      isArchived: Value(isArchived),
+      apiResponseJson: Value(apiResponseJson),
+    );
+  }
+
+  SavedTasksTableCompanion toUpdateCompanion() {
+    assert(id != null, 'Cannot update a task without an id');
+    return SavedTasksTableCompanion(
+      id: Value(id!),
+      taskConfigId: Value(taskConfigId),
+      categoryId: Value(categoryId),
+      source: Value(source),
+      taskNameKey: Value(taskNameKey),
+      taskNameOverride: Value(taskNameOverride),
+      customTitle: Value(customTitle),
+      repeatOption: Value(repeatOption),
+      scheduledTimesJson: Value(json.encode(scheduledTimes)),
+      scheduledWeekdaysJson: Value(json.encode(scheduledWeekdays)),
+      scheduledYearlyDateMs: Value(scheduledYearlyDateMs),
+      scheduledYearlyDatesJson: Value(json.encode(scheduledYearlyDatesMs)),
+      monthlyMode: Value(monthlyMode),
+      monthlySpecificDate: Value(monthlySpecificDate),
+      monthlyShortMonthFallback: Value(monthlyShortMonthFallback),
+      reminderMinutesJson: Value(json.encode(reminderMinutes)),
+      channelApp: Value(channelApp),
+      channelAlarm: Value(channelAlarm),
+      channelEmail: Value(channelEmail),
+      channelWhatsApp: Value(channelWhatsApp),
+      locationKey: Value(locationKey),
+      customLocationName: Value(customLocationName),
+      linkedTaskConfigId: Value(linkedTaskConfigId),
+      groupId: Value(groupId),
+      pointsPerCompletion: Value(pointsPerCompletion),
+      homeTimezone: Value(homeTimezone),
+      systemTimezoneAtCreation: Value(systemTimezoneAtCreation),
+      updatedAt: Value(updatedAt),
+      isArchived: Value(isArchived),
+      apiResponseJson: Value(apiResponseJson),
+    );
+  }
+
+  static List<String> _decodeStringList(String raw) {
+    try {
+      return (jsonDecode(raw) as List).cast<String>();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static List<int> _decodeIntList(String raw) {
+    try {
+      return (jsonDecode(raw) as List).cast<int>();
+    } catch (_) {
+      return [];
+    }
+  }
 }

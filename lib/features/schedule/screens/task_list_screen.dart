@@ -1,235 +1,253 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../../core/theme/midnight_theme.dart';
-import '../models/task_config_model.dart';
-import '../providers/schedule_providers.dart';
+import '../../../core/config/config_loader.dart';
+import '../../../core/config/config_models.dart';
+import '../../../core/data/repositories/task_repository.dart';
+import '../../../core/theme/midnight_focus_theme.dart';
 import '../../../router/app_router.dart';
 
 @RoutePage()
 class TaskListScreen extends ConsumerWidget {
-  final String categoryId;
+  const TaskListScreen({
+    super.key,
+    @PathParam('categoryId') required this.categoryId,
+  });
 
-  const TaskListScreen({super.key, @PathParam() required this.categoryId});
+  final String categoryId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
+    // Custom tasks go directly to schedule screen
+    if (categoryId == 'custom') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.router.replace(ScheduleRoute(
+          categoryId: 'custom',
+          taskConfig: _customTaskConfig(),
+        ));
+      });
+      return const SizedBox.shrink();
+    }
+
     final categoryAsync = ref.watch(categoryConfigProvider(categoryId));
 
     return Scaffold(
-      backgroundColor: MidnightTheme.background,
+      backgroundColor: MidnightFocusTheme.background,
       appBar: AppBar(
+        title: Text(_categoryLabel(categoryId)),
+        backgroundColor: MidnightFocusTheme.surface,
         leading: const AutoLeadingButton(),
-        title: categoryAsync.when(
-          loading: () => const SizedBox.shrink(),
-          error:   (_, __) => Text(l10n.taskScreenTitle),
-          data:    (c) => Text(
-            _resolveCategoryLabel(l10n, c.labelKey),
-            style: MidnightTheme.headlineLarge,
-          ),
-        ),
       ),
       body: categoryAsync.when(
         loading: () => const Center(
-          child: CircularProgressIndicator(color: MidnightTheme.primary),
+          child: CircularProgressIndicator(color: MidnightFocusTheme.primary),
         ),
         error: (e, _) => Center(
-          child: Text(e.toString(), style: MidnightTheme.bodySmall),
+          child: Text('Failed to load tasks', style: context.text.bodyMedium),
         ),
         data: (category) => _TaskList(category: category),
       ),
     );
   }
 
-  String _resolveCategoryLabel(AppLocalizations l10n, String key) {
-    return switch (key) {
-      'category.vehicle.label'        => l10n.categoryVehicleLabel,
-      'category.health.label'         => l10n.categoryHealthLabel,
-      'category.home_cleaning.label'  => l10n.categoryHomeCleaningLabel,
-      'category.bin_collection.label' => l10n.categoryBinCollectionLabel,
-      _                               => key,
+  String _categoryLabel(String id) {
+    const labels = {
+      'vehicle':        'Vehicle',
+      'health':         'Health',
+      'home_cleaning':  'Home Cleaning',
+      'bin_collection': 'Bin Collection',
     };
+    return labels[id] ?? id;
   }
+
+  TaskConfig _customTaskConfig() => const TaskConfig(
+    id:                   'custom',
+    nameKey:              'custom_task.name',
+    enabled:              true,
+    sortOrder:            0,
+    source:               'manual',
+    allowedRepeats:       RepeatOption.values,
+    alarmEnabledByDefault: false,
+    tags:                 [],
+    encourgeCustomTitle:  false,
+  );
 }
 
-// ── Task list ─────────────────────────────────────────────────────────────────
-
-class _TaskList extends StatelessWidget {
+class _TaskList extends ConsumerWidget {
+  const _TaskList({required this.category});
   final CategoryConfig category;
 
-  const _TaskList({required this.category});
-
   @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeTasks = ref.watch(
+      taskRepositoryProvider.select((_) => _), // trigger rebuild on repo changes
+    );
 
-    return ListView(
-      padding: const EdgeInsets.symmetric(
-        horizontal: MidnightTheme.screenH,
-        vertical:   MidnightTheme.screenV,
-      ),
-      children: [
-        ...category.tasks.map(
-          (task) => _TaskTile(
-            task:       task,
-            categoryId: category.id,
+    final tasks = category.tasks.where((t) => t.enabled).toList()
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+
+    if (tasks.isEmpty) {
+      return Center(
+        child: Text(
+          'No tasks available',
+          style: context.text.bodyMedium?.copyWith(
+            color: MidnightFocusTheme.textSecondary,
           ),
         ),
+      );
+    }
 
-        const SizedBox(height: 12),
-
-        // Add custom task — shown at bottom of every category
-        _AddCustomTile(categoryId: category.id),
-      ],
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      itemCount: tasks.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (context, i) => _TaskListTile(
+        task:       tasks[i],
+        categoryId: category.id,
+        colorHex:   category.colorHex,
+      ),
     );
   }
 }
 
-// ── Task tile ─────────────────────────────────────────────────────────────────
+class _TaskListTile extends ConsumerWidget {
+  const _TaskListTile({
+    required this.task,
+    required this.categoryId,
+    this.colorHex,
+  });
 
-class _TaskTile extends StatelessWidget {
   final TaskConfig task;
   final String categoryId;
+  final String? colorHex;
 
-  const _TaskTile({required this.task, required this.categoryId});
+  Color get _accentColor {
+    if (colorHex == null) return MidnightFocusTheme.primary;
+    try {
+      return Color(int.parse('FF${colorHex!.replaceFirst('#', '')}', radix: 16));
+    } catch (_) {
+      return MidnightFocusTheme.primary;
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final label    = _resolveTaskLabel(l10n, task.nameKey);
-    final subtitle = _resolveTaskSubtitle(l10n, task.descriptionKey);
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FutureBuilder<bool>(
+      future: ref.read(taskRepositoryProvider).isTaskScheduled(task.id),
+      builder: (context, snapshot) {
+        final isScheduled = snapshot.data ?? false;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color:        MidnightTheme.surface,
-        borderRadius: BorderRadius.circular(MidnightTheme.radiusMd),
-        border:       Border.all(color: MidnightTheme.border),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color:  MidnightTheme.surface2,
-            shape:  BoxShape.circle,
-          ),
-          child: Icon(
-            _resolveIcon(task.icon),
-            color: MidnightTheme.primary,
-            size: 20,
-          ),
-        ),
-        title: Text(label, style: MidnightTheme.labelLarge),
-        subtitle: subtitle != null
-            ? Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  subtitle,
-                  style: MidnightTheme.bodySmall,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              )
-            : null,
-        trailing: const Icon(
-          Icons.chevron_right,
-          color: MidnightTheme.textMuted,
-          size: 20,
-        ),
-        onTap: () => context.pushRoute(
-          ScheduleRoute(
-            categoryId:   categoryId,
-            taskConfigId: task.id,
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _resolveTaskLabel(AppLocalizations l10n, String key) {
-    return switch (key) {
-      'task.vehicle.car_mot.name'              => l10n.taskVehicleCarMotName,
-      'task.vehicle.road_tax.name'             => l10n.taskVehicleRoadTaxName,
-      'task.health.medication.name'            => l10n.taskHealthMedicationName,
-      'task.home_cleaning.hoovering.name'      => l10n.taskHomeCleaningHooveringName,
-      'task.bin_collection.bin_out.name'       => l10n.taskBinCollectionBinOutName,
-      'task.bin_collection.bin_in.name'        => l10n.taskBinCollectionBinInName,
-      _                                        => key,
-    };
-  }
-
-  String? _resolveTaskSubtitle(AppLocalizations l10n, String? key) {
-    if (key == null) return null;
-    return switch (key) {
-      'task.vehicle.car_mot.description'         => l10n.taskVehicleCarMotDescription,
-      'task.vehicle.road_tax.description'        => l10n.taskVehicleRoadTaxDescription,
-      'task.health.medication.description'       => l10n.taskHealthMedicationDescription,
-      'task.home_cleaning.hoovering.description' => l10n.taskHomeCleaningHooveringDescription,
-      'task.bin_collection.bin_out.description'  => l10n.taskBinCollectionBinOutDescription,
-      'task.bin_collection.bin_in.description'   => l10n.taskBinCollectionBinInDescription,
-      _                                          => null,
-    };
-  }
-
-  IconData _resolveIcon(String? name) {
-    return switch (name) {
-      'build_circle'          => Icons.build_circle,
-      'receipt_long'          => Icons.receipt_long,
-      'medication'            => Icons.medication,
-      'cleaning_services'     => Icons.cleaning_services,
-      'arrow_outward'         => Icons.arrow_outward,
-      'arrow_inward'          => Icons.move_to_inbox,
-      _                       => Icons.task_alt,
-    };
-  }
-}
-
-// ── Add custom task tile ───────────────────────────────────────────────────────
-
-class _AddCustomTile extends StatelessWidget {
-  final String categoryId;
-
-  const _AddCustomTile({required this.categoryId});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return GestureDetector(
-      onTap: () => context.pushRoute(
-        ScheduleRoute(
-          categoryId:   'custom',
-          taskConfigId: 'custom.new',
-        ),
-      ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color:        Colors.transparent,
-          borderRadius: BorderRadius.circular(MidnightTheme.radiusMd),
-          border:       Border.all(
-            color: MidnightTheme.border,
-            style: BorderStyle.solid,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.add, color: MidnightTheme.primary, size: 20),
-            const SizedBox(width: 12),
-            Text(
-              l10n.taskScreenAddCustom,
-              style: MidnightTheme.bodyMedium.copyWith(
-                color: MidnightTheme.primary,
+        return GestureDetector(
+          onTap: () => context.router.push(ScheduleRoute(
+            categoryId: categoryId,
+            taskConfig: task,
+          )),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color:        MidnightFocusTheme.surfaceCard,
+              borderRadius: BorderRadius.circular(14),
+              border:       Border.all(
+                color: isScheduled
+                    ? _accentColor.withOpacity(0.4)
+                    : MidnightFocusTheme.border,
               ),
             ),
-          ],
-        ),
-      ),
+            child: Row(
+              children: [
+                // Icon
+                Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    color:        _accentColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    _iconData(task.icon ?? 'task_alt'),
+                    color: _accentColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 14),
+
+                // Name + source tag
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _resolveTaskName(task.nameKey),
+                        style: const TextStyle(
+                          fontFamily:  'Sora',
+                          fontSize:    15,
+                          fontWeight:  FontWeight.w600,
+                          color:       MidnightFocusTheme.textPrimary,
+                        ),
+                      ),
+                      if (task.source != 'manual') ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          _sourceLabel(task.source),
+                          style: const TextStyle(
+                            fontFamily: 'Sora',
+                            fontSize:   11,
+                            color:      MidnightFocusTheme.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                // Scheduled indicator
+                if (isScheduled)
+                  Icon(Icons.check_circle, color: _accentColor, size: 18)
+                else
+                  const Icon(
+                    Icons.chevron_right,
+                    color: MidnightFocusTheme.textDisabled,
+                    size: 20,
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
+  }
+
+  String _resolveTaskName(String key) {
+    const names = {
+      'task.vehicle.car_mot.name':              'Car MOT',
+      'task.vehicle.road_tax.name':             'Road Tax',
+      'task.health.medication.name':            'Medication',
+      'task.home_cleaning.hoovering.name':      'Hoovering',
+      'task.bin_collection.bin_out.name':       'Bin Out',
+      'task.bin_collection.bin_in.name':        'Bin In',
+    };
+    return names[key] ?? key;
+  }
+
+  String _sourceLabel(String source) {
+    const labels = {
+      'dvla_api':       'Via DVLA lookup',
+      'bin_api':        'Via bin collection API',
+      'setup_wizard':   'From setup',
+    };
+    return labels[source] ?? source;
+  }
+
+  IconData _iconData(String name) {
+    const icons = {
+      'build_circle':         Icons.build_circle,
+      'receipt_long':         Icons.receipt_long,
+      'medication':           Icons.medication,
+      'cleaning_services':    Icons.cleaning_services,
+      'arrow_outward':        Icons.arrow_outward,
+      'arrow_inward':         Icons.arrow_back,
+      'task_alt':             Icons.task_alt,
+    };
+    return icons[name] ?? Icons.task_alt;
   }
 }

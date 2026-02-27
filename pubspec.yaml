@@ -1,10 +1,10 @@
-name: task_app
-description: A config-driven task management app for UK households.
-publish_to: none
+name: taskapp
+description: A smart task scheduling and reminder app.
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.3.0 <4.0.0"
+  sdk: '>=3.2.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -12,94 +12,59 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  # State management
-  flutter_riverpod: ^2.5.1
-  riverpod_annotation: ^2.3.5
+  # ── State management ───────────────────────────────────────────────────────
+  # All three riverpod packages MUST share the same version number.
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
 
-  # Navigation
-  auto_route: ^8.3.0
+  # ── Navigation ─────────────────────────────────────────────────────────────
+  # go_router replaces auto_route. Reason: auto_route_generator and
+  # riverpod_generator fight over analyzer/macros versions — unfixable conflict.
+  # go_router requires ZERO codegen — routes defined in plain Dart.
+  # Maintained by the Flutter team. go_router ^14.x is current stable.
+  go_router: ^14.0.2
 
-  # Local database
-  isar: ^3.1.0+1
-  isar_flutter_libs: ^3.1.0+1
+  # ── Local database ─────────────────────────────────────────────────────────
+  # drift + drift_dev for reactive SQLite. Replaces isar (isar_generator
+  # was incompatible with all other codegen packages).
+  drift: ^2.18.0
+  sqlite3_flutter_libs: ^0.5.24
   path_provider: ^2.1.3
+  path: ^1.9.0
 
-  # Notifications & alarms
-  flutter_local_notifications: ^17.2.2
-
-  # HTTP
-  dio: ^5.4.3+1
-
-  # Timezone
+  # ── Notifications ──────────────────────────────────────────────────────────
+  flutter_local_notifications: ^18.0.1
   timezone: ^0.9.4
-  flutter_timezone: ^2.0.0
+  flutter_timezone: ^1.0.8
 
-  # Utilities
-  intl: ^0.19.0
-  json_annotation: ^4.9.0
-  freezed_annotation: ^2.4.1
+  # ── Internationalisation ───────────────────────────────────────────────────
+  # Never pin intl exactly when using flutter_localizations.
+  intl: '>=0.17.0 <1.0.0'
+
+  # ── Config loading ─────────────────────────────────────────────────────────
+  flutter_cache_manager: ^3.4.1
+
+  # ── Utilities ──────────────────────────────────────────────────────────────
+  uuid: ^4.4.0
   equatable: ^2.0.5
-  collection: ^1.18.0
-  shared_preferences: ^2.2.3
-
-  # Assets — remote config override
-  http: ^1.2.1
+  shared_preferences: ^2.3.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  # Code generation
-  build_runner: ^2.4.9
-  riverpod_generator: ^2.4.0
-  auto_route_generator: ^8.3.0
-  isar_generator: ^3.1.0+1
-  freezed: ^2.5.2
-  json_serializable: ^6.8.0
-
-  # Linting
   flutter_lints: ^4.0.0
-  mocktail: ^1.0.4
+
+  # ── Code generation ────────────────────────────────────────────────────────
+  # Only two codegen packages remain — both are compatible with each other.
+  build_runner: ^2.4.13
+  riverpod_generator: ^2.6.1   # must match flutter_riverpod exactly
+  drift_dev: ^2.18.0           # must match drift exactly
 
 flutter:
   uses-material-design: true
 
   assets:
-    - assets/config/config-registry.json
-    - assets/config/app-global-config.json
-    - assets/config/dashboard-global-config.json
-    - assets/config/schedule-global-config.json
-    - assets/config/notification-global-config.json
-    - assets/config/alarm-global-config.json
-    - assets/config/api-global-config.json
-    - assets/config/points-global-config.json
-    - assets/config/ui-global-config.json
-    - assets/config/language-config.json
-    - assets/config/theme-config.json
-    - assets/config/notification-config.json
-    - assets/config/setup-config.json
-    - assets/config/pets-config.json
-    - assets/config/category-registry.json
-    - assets/config/categories/vehicle.json
-    - assets/config/categories/health.json
-    - assets/config/categories/home_cleaning.json
-    - assets/config/categories/bin_collection.json
+    - assets/config/
+    - assets/config/categories/
 
-  fonts:
-    - family: Syne
-      fonts:
-        - asset: assets/fonts/Syne-Regular.ttf
-        - asset: assets/fonts/Syne-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/Syne-ExtraBold.ttf
-          weight: 800
-    - family: DMSans
-      fonts:
-        - asset: assets/fonts/DMSans-Regular.ttf
-        - asset: assets/fonts/DMSans-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/DMSans-SemiBold.ttf
-          weight: 600
-    - family: SyneMono
-      fonts:
-        - asset: assets/fonts/SyneMono-Regular.ttf
+  generate: true

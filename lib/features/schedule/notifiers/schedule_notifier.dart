@@ -1,149 +1,209 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/commands/command.dart';
-import '../../../core/commands/commands/task_commands.dart';
-import '../../../core/config/config_loader.dart';
-import '../../../core/data/repositories/preferences_repository.dart';
-import '../../../core/data/repositories/task_repository.dart';
-import '../models/schedule_form_state.dart';
-import '../models/task_config_model.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:uuid/uuid.dart';
 
-/// Manages all state for the schedule screen form.
-///
-/// Initialised with task config defaults when created.
-/// All mutations go through named methods — never mutate state directly.
-class ScheduleFormNotifier extends StateNotifier<ScheduleFormState> {
-  final ScheduleFormArgs _args;
-  final TaskRepository _taskRepo;
-  final PreferencesRepository _prefsRepo;
-  final CommandDispatcher _dispatcher;
-  final ConfigLoader _configLoader;
+import '../../core/commands/command.dart';
+import '../../core/commands/commands/task_commands.dart';
+import '../../core/config/config_models.dart';
+import '../../core/data/models/saved_task.dart';
 
-  TaskConfig? _taskConfig;
+part 'schedule_notifier.g.dart';
 
-  ScheduleFormNotifier({
-    required ScheduleFormArgs args,
-    required TaskRepository taskRepo,
-    required PreferencesRepository prefsRepo,
-    required CommandDispatcher dispatcher,
-    required ConfigLoader configLoader,
-  })  : _args = args,
-        _taskRepo = taskRepo,
-        _prefsRepo = prefsRepo,
-        _dispatcher = dispatcher,
-        _configLoader = configLoader,
-        super(ScheduleFormState(
-          categoryId:   args.categoryId,
-          taskConfigId: args.taskConfigId,
-          taskName:     '',
-        )) {
-    _init();
-  }
+// ─────────────────────────────────────────────────────────────────────────────
+// ScheduleFormState — immutable snapshot of all schedule screen fields
+// ─────────────────────────────────────────────────────────────────────────────
 
-  // ── Initialisation ─────────────────────────────────────────────────────────
+class ScheduleFormState {
+  const ScheduleFormState({
+    this.taskNameOverride,
+    this.customTitle,
+    required this.repeatOption,
+    required this.scheduledTimes,
+    required this.scheduledWeekdays,
+    this.scheduledYearlyDate,
+    required this.scheduledYearlyDates,
+    this.monthlyMode,
+    this.monthlySpecificDate,
+    this.monthlyShortMonthFallback,
+    required this.reminderMinutes,
+    required this.channelApp,
+    required this.channelAlarm,
+    required this.channelEmail,
+    required this.channelWhatsApp,
+    this.locationKey,
+    this.customLocationName,
+    required this.isSaving,
+    this.saveError,
+  });
 
-  Future<void> _init() async {
-    if (_args.existingTaskId != null) {
-      await _loadExistingTask(_args.existingTaskId!);
-    } else {
-      await _loadTaskConfigDefaults();
-    }
-  }
+  final String? taskNameOverride;
+  final String? customTitle;
+  final RepeatOption repeatOption;
+  final List<String> scheduledTimes;
+  final List<int> scheduledWeekdays;
+  final DateTime? scheduledYearlyDate;
+  final List<DateTime> scheduledYearlyDates;
+  final String? monthlyMode;
+  final int? monthlySpecificDate;
+  final String? monthlyShortMonthFallback;
+  final List<int> reminderMinutes;
+  final bool channelApp;
+  final bool channelAlarm;
+  final bool channelEmail;
+  final bool channelWhatsApp;
+  final String? locationKey;
+  final String? customLocationName;
+  final bool isSaving;
+  final String? saveError;
 
-  /// For edit mode — pre-fill form from saved Isar task.
-  Future<void> _loadExistingTask(int taskId) async {
-    final task = await _taskRepo.getById(taskId);
-    if (task == null) return;
-
-    state = state.copyWith(
-      taskName:        task.taskName,
-      customTitle:     task.customTitle,
-      repeatFrequency: RepeatFrequency.values
-          .firstWhere((r) => r.configKey == task.repeatFrequency,
-              orElse: () => RepeatFrequency.weekly),
-      scheduledTimes:  List.from(task.scheduledTimes),
-      selectedDays:    List.from(task.scheduledDays),
-      selectedDates:   List.from(task.scheduledDates),
-      monthlyOption:   MonthlyOption.values
-          .firstWhere((m) => m.name == task.monthlyOption,
-              orElse: () => MonthlyOption.specificDate),
-      shortMonthFallback: ShortMonthFallback.values
-          .firstWhere((s) => s.name == task.shortMonthFallback,
-              orElse: () => ShortMonthFallback.useLastDay),
-      locationKey:     task.locationKey,
-      reminderMinutes: List.from(task.reminderMinutes),
-      notifyViaApp:    task.notifyViaApp,
-      notifyViaAlarm:  task.notifyViaAlarm,
-      notifyViaEmail:  task.notifyViaEmail,
-      notifyViaWhatsapp: task.notifyViaWhatsapp,
+  ScheduleFormState copyWith({
+    String? taskNameOverride,
+    bool clearTaskNameOverride = false,
+    String? customTitle,
+    bool clearCustomTitle = false,
+    RepeatOption? repeatOption,
+    List<String>? scheduledTimes,
+    List<int>? scheduledWeekdays,
+    DateTime? scheduledYearlyDate,
+    bool clearYearlyDate = false,
+    List<DateTime>? scheduledYearlyDates,
+    String? monthlyMode,
+    int? monthlySpecificDate,
+    String? monthlyShortMonthFallback,
+    List<int>? reminderMinutes,
+    bool? channelApp,
+    bool? channelAlarm,
+    bool? channelEmail,
+    bool? channelWhatsApp,
+    String? locationKey,
+    bool clearLocationKey = false,
+    String? customLocationName,
+    bool clearCustomLocationName = false,
+    bool? isSaving,
+    String? saveError,
+    bool clearSaveError = false,
+  }) {
+    return ScheduleFormState(
+      taskNameOverride:          clearTaskNameOverride ? null : (taskNameOverride ?? this.taskNameOverride),
+      customTitle:               clearCustomTitle ? null : (customTitle ?? this.customTitle),
+      repeatOption:              repeatOption ?? this.repeatOption,
+      scheduledTimes:            scheduledTimes ?? this.scheduledTimes,
+      scheduledWeekdays:         scheduledWeekdays ?? this.scheduledWeekdays,
+      scheduledYearlyDate:       clearYearlyDate ? null : (scheduledYearlyDate ?? this.scheduledYearlyDate),
+      scheduledYearlyDates:      scheduledYearlyDates ?? this.scheduledYearlyDates,
+      monthlyMode:               monthlyMode ?? this.monthlyMode,
+      monthlySpecificDate:       monthlySpecificDate ?? this.monthlySpecificDate,
+      monthlyShortMonthFallback: monthlyShortMonthFallback ?? this.monthlyShortMonthFallback,
+      reminderMinutes:           reminderMinutes ?? this.reminderMinutes,
+      channelApp:                channelApp ?? this.channelApp,
+      channelAlarm:              channelAlarm ?? this.channelAlarm,
+      channelEmail:              channelEmail ?? this.channelEmail,
+      channelWhatsApp:           channelWhatsApp ?? this.channelWhatsApp,
+      locationKey:               clearLocationKey ? null : (locationKey ?? this.locationKey),
+      customLocationName:        clearCustomLocationName ? null : (customLocationName ?? this.customLocationName),
+      isSaving:                  isSaving ?? this.isSaving,
+      saveError:                 clearSaveError ? null : (saveError ?? this.saveError),
     );
   }
 
-  /// For create mode — apply task config defaults.
-  Future<void> _loadTaskConfigDefaults() async {
-    try {
-      final json = await _configLoader.loadCategory(_args.categoryId);
-      final category = CategoryConfig.fromJson(json);
-      _taskConfig = category.tasks
-          .firstWhere((t) => t.id == _args.taskConfigId);
-
-      final tc = _taskConfig!;
-      final prefs = await _prefsRepo.get();
-
-      // Resolve default repeat
-      final defaultRepeat = tc.defaultRepeat != null
-          ? RepeatFrequency.values
-              .firstWhere((r) => r.configKey == tc.defaultRepeat,
-                  orElse: () => RepeatFrequency.weekly)
-          : RepeatFrequency.weekly;
-
-      // Resolve default times
-      final defaultTimes = tc.multipleTimesPerDay?.defaultTimes ??
-          [tc.defaultTime ?? prefs.jobStartTime];
-
-      // Resolve default reminders
-      // Order: user preferred → task config → global default [30]
-      final defaultReminders = prefs.preferredReminderMinutes.isNotEmpty
-          ? prefs.preferredReminderMinutes
-          : (tc.reminderOptions?.defaultSelectedMinutes ?? [30]);
-
-      // Resolve default notification channels
-      // Order: task config → user prefs → global defaults
-      final notifConfig = tc.notification;
-
-      state = state.copyWith(
-        taskName:        tc.nameKey, // resolved to string by UI via l10n
-        repeatFrequency: defaultRepeat,
-        scheduledTimes:  defaultTimes,
-        selectedDays:    tc.defaultDays.isNotEmpty ? tc.defaultDays : ['monday'],
-        reminderMinutes: defaultReminders,
-        notifyViaApp:    notifConfig?.notifyViaApp    ?? prefs.defaultNotifyViaApp,
-        notifyViaAlarm:  notifConfig?.notifyViaAlarm  ?? (tc.alarmEnabledByDefault),
-        notifyViaEmail:  notifConfig?.notifyViaEmail  ?? prefs.defaultNotifyViaEmail,
-        notifyViaWhatsapp: notifConfig?.notifyViaWhatsapp ?? prefs.defaultNotifyViaWhatsapp,
-      );
-    } catch (_) {
-      // Custom task — no config file. State stays with bare defaults.
-    }
+  /// Build initial state from a TaskConfig's defaults
+  static ScheduleFormState fromTaskConfig(TaskConfig config) {
+    return ScheduleFormState(
+      repeatOption:      config.defaultRepeat ?? RepeatOption.never,
+      scheduledTimes:    config.multipleTimesPerDay?.defaultTimes ??
+                         [config.defaultTime ?? '09:00'],
+      scheduledWeekdays: _defaultWeekdays(config.defaultDays),
+      scheduledYearlyDates: [],
+      monthlyMode:       'specific_date',
+      monthlySpecificDate: 1,
+      monthlyShortMonthFallback: 'use_last_day',
+      reminderMinutes:   config.reminderOptions?.defaultSelectedMinutes ?? [30],
+      channelApp:        config.notificationChannels?.app    ?? true,
+      channelAlarm:      config.notificationChannels?.alarm  ?? false,
+      channelEmail:      config.notificationChannels?.email  ?? false,
+      channelWhatsApp:   config.notificationChannels?.whatsapp ?? false,
+      isSaving:          false,
+    );
   }
 
-  // ── Repeat ────────────────────────────────────────────────────────────────
-
-  void setRepeatFrequency(RepeatFrequency freq) {
-    state = state.copyWith(repeatFrequency: freq, saveError: null);
+  /// Build initial state from an existing SavedTask (for editing)
+  static ScheduleFormState fromSavedTask(SavedTask task) {
+    return ScheduleFormState(
+      taskNameOverride:   task.taskNameOverride,
+      customTitle:        task.customTitle,
+      repeatOption:       RepeatOption.fromString(task.repeatOption),
+      scheduledTimes:     List.from(task.scheduledTimes),
+      scheduledWeekdays:  List.from(task.scheduledWeekdays),
+      scheduledYearlyDate: task.yearlyDate,
+      scheduledYearlyDates: task.scheduledYearlyDatesMs
+          .map((ms) => DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true))
+          .toList(),
+      monthlyMode:        task.monthlyMode ?? 'specific_date',
+      monthlySpecificDate: task.monthlySpecificDate ?? 1,
+      monthlyShortMonthFallback: task.monthlyShortMonthFallback ?? 'use_last_day',
+      reminderMinutes:    List.from(task.reminderMinutes),
+      channelApp:         task.channelApp,
+      channelAlarm:       task.channelAlarm,
+      channelEmail:       task.channelEmail,
+      channelWhatsApp:    task.channelWhatsApp,
+      locationKey:        task.locationKey,
+      customLocationName: task.customLocationName,
+      isSaving:           false,
+    );
   }
 
-  // ── Times ─────────────────────────────────────────────────────────────────
+  static List<int> _defaultWeekdays(List<String>? dayNames) {
+    if (dayNames == null || dayNames.isEmpty) return [];
+    const map = {
+      'monday': 1, 'tuesday': 2, 'wednesday': 3,
+      'thursday': 4, 'friday': 5, 'saturday': 6, 'sunday': 7,
+    };
+    return dayNames.map((d) => map[d.toLowerCase()] ?? 1).toList();
+  }
+}
 
-  void setTime(int index, String time) {
+// ─────────────────────────────────────────────────────────────────────────────
+// ScheduleFormNotifier
+// ─────────────────────────────────────────────────────────────────────────────
+
+@riverpod
+class ScheduleFormNotifier extends _$ScheduleFormNotifier {
+  @override
+  ScheduleFormState build(TaskConfig taskConfig, {SavedTask? existingTask}) {
+    return existingTask != null
+        ? ScheduleFormState.fromSavedTask(existingTask)
+        : ScheduleFormState.fromTaskConfig(taskConfig);
+  }
+
+  // ── Field updates ─────────────────────────────────────────────────────────
+
+  void setTaskName(String name) =>
+      state = state.copyWith(taskNameOverride: name.isEmpty ? null : name);
+
+  void setCustomTitle(String title) =>
+      state = state.copyWith(customTitle: title.isEmpty ? null : title);
+
+  void setRepeat(RepeatOption option) {
+    // Reset time-related fields when switching repeat to avoid stale data
+    state = state.copyWith(
+      repeatOption:        option,
+      clearYearlyDate:     option != RepeatOption.yearly,
+      scheduledYearlyDates: option != RepeatOption.yearly ? [] : state.scheduledYearlyDates,
+    );
+  }
+
+  void setTime(String time, {int index = 0}) {
     final times = List<String>.from(state.scheduledTimes);
     if (index < times.length) {
       times[index] = time;
-      state = state.copyWith(scheduledTimes: times);
+    } else {
+      times.add(time);
     }
+    state = state.copyWith(scheduledTimes: times);
   }
 
   void addTime(String time) {
-    final maxTimes = _taskConfig?.multipleTimesPerDay?.maxTimes ?? 6;
+    final maxTimes = taskConfig.multipleTimesPerDay?.maxTimes ?? 6;
     if (state.scheduledTimes.length >= maxTimes) return;
     state = state.copyWith(
       scheduledTimes: [...state.scheduledTimes, time],
@@ -151,167 +211,186 @@ class ScheduleFormNotifier extends StateNotifier<ScheduleFormState> {
   }
 
   void removeTime(int index) {
-    final minTimes = _taskConfig?.multipleTimesPerDay?.minTimes ?? 1;
-    if (state.scheduledTimes.length <= minTimes) return;
-    final times = List<String>.from(state.scheduledTimes)..removeAt(index);
+    final times = List<String>.from(state.scheduledTimes);
+    if (times.length <= 1) return; // Must have at least one time
+    times.removeAt(index);
     state = state.copyWith(scheduledTimes: times);
   }
 
-  // ── Days ──────────────────────────────────────────────────────────────────
-
-  void toggleDay(String day) {
-    final days = List<String>.from(state.selectedDays);
-    if (days.contains(day)) {
-      if (days.length > 1) days.remove(day); // must have at least 1 day
+  void toggleWeekday(int weekday) {
+    final days = List<int>.from(state.scheduledWeekdays);
+    if (days.contains(weekday)) {
+      days.remove(weekday);
     } else {
-      days.add(day);
+      days.add(weekday);
+      days.sort();
     }
-    state = state.copyWith(selectedDays: days);
+    state = state.copyWith(scheduledWeekdays: days);
   }
 
-  void setSameTimeAllDays(bool value) =>
-      state = state.copyWith(sameTimeAllDays: value);
-
-  // ── Monthly ───────────────────────────────────────────────────────────────
-
-  void setMonthlyOption(MonthlyOption option) =>
-      state = state.copyWith(monthlyOption: option);
-
-  void setShortMonthFallback(ShortMonthFallback fallback) =>
-      state = state.copyWith(shortMonthFallback: fallback);
-
-  // ── Yearly ────────────────────────────────────────────────────────────────
-
-  void setSelectedDate(String date) {
-    final maxSelections = _taskConfig?.yearlyConfig?.maxDateSelections ?? 2;
-    final dates = List<String>.from(state.selectedDates);
-
-    if (dates.contains(date)) {
-      dates.remove(date);
-    } else if (dates.length < maxSelections) {
-      dates.add(date);
+  void setYearlyDate(DateTime date) {
+    final yearlyConfig = taskConfig.yearlyConfig ?? YearlyConfig.defaults;
+    if (yearlyConfig.singleDatePicker || yearlyConfig.maxDateSelections <= 1) {
+      state = state.copyWith(
+        scheduledYearlyDate:  date,
+        scheduledYearlyDates: [date],
+      );
+    } else {
+      // Multi-date — toggle
+      final dates = List<DateTime>.from(state.scheduledYearlyDates);
+      final idx   = dates.indexWhere((d) => _sameDay(d, date));
+      if (idx >= 0) {
+        dates.removeAt(idx);
+      } else if (dates.length < yearlyConfig.maxDateSelections) {
+        dates.add(date);
+      }
+      state = state.copyWith(scheduledYearlyDates: dates);
     }
-    state = state.copyWith(selectedDates: dates);
   }
 
-  // ── Location ──────────────────────────────────────────────────────────────
+  void setMonthlyMode(String mode) =>
+      state = state.copyWith(monthlyMode: mode);
 
-  void setLocation(String? locationKey) =>
-      state = state.copyWith(locationKey: locationKey);
+  void setMonthlySpecificDate(int day) =>
+      state = state.copyWith(monthlySpecificDate: day);
 
-  // ── Reminders ─────────────────────────────────────────────────────────────
+  void setMonthlyShortFallback(String fallback) =>
+      state = state.copyWith(monthlyShortMonthFallback: fallback);
 
   void toggleReminder(int minutes) {
     final reminders = List<int>.from(state.reminderMinutes);
-    const maxReminders = 3; // from schedule-global-config
     if (reminders.contains(minutes)) {
       reminders.remove(minutes);
-    } else if (reminders.length < maxReminders) {
+    } else {
       reminders.add(minutes);
     }
     state = state.copyWith(reminderMinutes: reminders);
   }
 
-  // ── Channels ──────────────────────────────────────────────────────────────
+  void setChannelApp(bool value)      => state = state.copyWith(channelApp: value);
+  void setChannelAlarm(bool value)    => state = state.copyWith(channelAlarm: value);
+  void setChannelEmail(bool value)    => state = state.copyWith(channelEmail: value);
+  void setChannelWhatsApp(bool value) => state = state.copyWith(channelWhatsApp: value);
 
-  void setNotifyViaApp(bool value)      => state = state.copyWith(notifyViaApp: value);
-  void setNotifyViaAlarm(bool value)    => state = state.copyWith(notifyViaAlarm: value);
-  void setNotifyViaEmail(bool value)    => state = state.copyWith(notifyViaEmail: value);
-  void setNotifyViaWhatsapp(bool value) => state = state.copyWith(notifyViaWhatsapp: value);
-
-  // ── Custom title ──────────────────────────────────────────────────────────
-
-  void setCustomTitle(String? title) =>
-      state = state.copyWith(customTitle: title);
-
-  // ── Sleep window check ────────────────────────────────────────────────────
-
-  Future<void> checkSleepWindow() async {
-    final prefs = await _prefsRepo.get();
-    final sleepTime = prefs.sleepTime; // HH:mm
-    final wakeTime  = prefs.wakeUpTime;
-
-    bool inWindow = false;
-    for (final time in state.scheduledTimes) {
-      if (_isTimeBetween(time, sleepTime, wakeTime)) {
-        inWindow = true;
-        break;
-      }
+  void setLocation(String? locationKey) {
+    if (locationKey == null) {
+      state = state.copyWith(clearLocationKey: true, clearCustomLocationName: true);
+    } else {
+      state = state.copyWith(locationKey: locationKey, clearCustomLocationName: true);
     }
-    state = state.copyWith(isWithinSleepWindow: inWindow);
   }
 
-  bool _isTimeBetween(String time, String start, String end) {
-    final t = _parseMinutes(time);
-    final s = _parseMinutes(start);
-    final e = _parseMinutes(end);
-    if (s > e) {
-      // Overnight window e.g. 22:30 → 07:00
-      return t >= s || t <= e;
-    }
-    return t >= s && t <= e;
-  }
-
-  int _parseMinutes(String hhmm) {
-    final parts = hhmm.split(':');
-    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
+  void setCustomLocation(String name) {
+    state = state.copyWith(
+      customLocationName: name,
+      clearLocationKey:   true,
+    );
   }
 
   // ── Save ──────────────────────────────────────────────────────────────────
 
-  Future<void> save() async {
-    if (state.isSaving) return;
-    state = state.copyWith(isSaving: true, saveError: null, saveSuccess: false);
+  Future<bool> save({
+    required Ref ref,
+    required String categoryId,
+    required String homeTimezone,
+    SavedTask? existingTask,
+  }) async {
+    state = state.copyWith(isSaving: true, clearSaveError: true);
 
-    final task = state.toSavedTask(existingTaskId: _args.existingTaskId);
-    final Command command;
+    final task = _buildSavedTask(
+      categoryId:    categoryId,
+      homeTimezone:  homeTimezone,
+      existingTask:  existingTask,
+    );
 
-    if (_args.existingTaskId != null) {
-      command = EditTaskCommand(
-        taskRepo: _taskRepo,
-        updatedTask: task,
-      );
+    final command  = existingTask != null
+        ? EditTaskCommand(task)
+        : CreateTaskCommand(task);
+    final dispatcher = ref.read(commandDispatcherProvider);
+    final result     = await dispatcher.dispatch(command);
+
+    if (result.isSuccess) {
+      state = state.copyWith(isSaving: false);
+      return true;
     } else {
-      command = CreateTaskCommand(
-        taskRepo: _taskRepo,
-        prefsRepo: _prefsRepo,
-        task: task,
-      );
-    }
-
-    final result = await _dispatcher.dispatch(command);
-
-    if (result is CommandSuccess) {
-      state = state.copyWith(isSaving: false, saveSuccess: true);
-    } else if (result is CommandFailure) {
       state = state.copyWith(
-        isSaving: false,
-        saveError: result.message,
+        isSaving:  false,
+        saveError: result.error.toString(),
       );
+      return false;
     }
   }
 
-  void resetSaveState() =>
-      state = state.copyWith(saveSuccess: false, saveError: null);
+  // ── Validation ────────────────────────────────────────────────────────────
 
-  // ── Getters ───────────────────────────────────────────────────────────────
+  bool get isValid {
+    // Must have at least one scheduled time
+    if (state.scheduledTimes.isEmpty) return false;
 
-  TaskConfig? get taskConfig => _taskConfig;
+    // Weekly/biweekly must have at least one day selected
+    if (state.repeatOption == RepeatOption.weekly ||
+        state.repeatOption == RepeatOption.biweekly) {
+      if (state.scheduledWeekdays.isEmpty) return false;
+    }
 
-  bool get canAddMoreTimes {
-    final max = _taskConfig?.multipleTimesPerDay?.maxTimes ?? 1;
-    return state.scheduledTimes.length < max;
+    // Yearly must have a date selected
+    if (state.repeatOption == RepeatOption.yearly) {
+      if (state.scheduledYearlyDates.isEmpty) return false;
+    }
+
+    return true;
   }
 
-  bool get multipleTimesEnabled =>
-      _taskConfig?.multipleTimesPerDay?.enabled ?? false;
+  // ── Private builders ──────────────────────────────────────────────────────
 
-  int get yearlyMaxDateSelections =>
-      _taskConfig?.yearlyConfig?.maxDateSelections ?? 2;
+  SavedTask _buildSavedTask({
+    required String categoryId,
+    required String homeTimezone,
+    SavedTask? existingTask,
+  }) {
+    final task = existingTask ?? SavedTask();
 
-  bool get isYearlySingleDateOnly =>
-      _taskConfig?.yearlyConfig?.singleDatePicker ?? false;
+    task
+      ..taskConfigId            = taskConfig.id
+      ..categoryId              = categoryId
+      ..source                  = existingTask?.source ?? taskConfig.source
+      ..taskNameKey             = taskConfig.nameKey
+      ..taskNameOverride        = state.taskNameOverride
+      ..customTitle             = state.customTitle
+      ..repeatOption            = state.repeatOption.name
+      ..scheduledTimes          = List.from(state.scheduledTimes)
+      ..scheduledWeekdays       = List.from(state.scheduledWeekdays)
+      ..scheduledYearlyDateMs   = state.scheduledYearlyDate?.millisecondsSinceEpoch
+      ..scheduledYearlyDatesMs  = state.scheduledYearlyDates
+          .map((d) => d.millisecondsSinceEpoch)
+          .toList()
+      ..monthlyMode             = state.monthlyMode
+      ..monthlySpecificDate     = state.monthlySpecificDate
+      ..monthlyShortMonthFallback = state.monthlyShortMonthFallback
+      ..reminderMinutes         = List.from(state.reminderMinutes)
+      ..channelApp              = state.channelApp
+      ..channelAlarm            = state.channelAlarm
+      ..channelEmail            = state.channelEmail
+      ..channelWhatsApp         = state.channelWhatsApp
+      ..locationKey             = state.locationKey
+      ..customLocationName      = state.customLocationName
+      ..linkedTaskConfigId      = taskConfig.linkedTask?.linkedTaskId
+      ..groupId                 = existingTask?.groupId
+      ..pointsPerCompletion     = 1
+      ..homeTimezone            = homeTimezone
+      ..systemTimezoneAtCreation = homeTimezone
+      ..updatedAt               = DateTime.now();
+
+    if (existingTask == null) {
+      task.createdAt = DateTime.now();
+      if (taskConfig.linkedTask != null) {
+        task.groupId = const Uuid().v4();
+      }
+    }
+
+    return task;
+  }
+
+  bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 }
-
-// Import needed by toSavedTask
-import '../../../core/data/models/saved_task.dart';

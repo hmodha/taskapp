@@ -1,182 +1,170 @@
-import 'config_loader.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-/// Resolves config values through the three-level hierarchy:
-///   1. user_preferences  (highest priority)
-///   2. task_config       (per-task overrides)
-///   3. global_config     (fallback — the global *-config.json files)
-///
-/// Usage:
-///   final resolver = ConfigResolver(loader: loader, userPrefs: prefsMap);
-///   final value = resolver.getValue('schedule.reminder_options.options_minutes');
-///
-/// The registry (config-registry.json) tells the resolver which global config
-/// file owns which namespace, so it knows which file to look in for fallbacks.
+import '../../config_loader.dart';
+import '../../config_models.dart';
+
+part '../../config_resolver.g.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ConfigResolver
+// Resolution hierarchy: user_preferences → task_config → global_config
+// ─────────────────────────────────────────────────────────────────────────────
+
 class ConfigResolver {
-  final ConfigLoader _loader;
-  final Map<String, dynamic> _registry;
+  ConfigResolver({required this.globalConfig, required this.userPreferences});
 
-  // Loaded global config cache — keyed by filename
-  final Map<String, Map<String, dynamic>> _globalConfigs = {};
+  final Map<String, dynamic> globalConfig;
+  final Map<String, dynamic> userPreferences;
 
-  // User preferences overlay — set by PreferencesRepository on load/update
-  Map<String, dynamic> _userPrefs = {};
-
-  // Per-task config overlay — set when schedule screen opens for a specific task
-  Map<String, dynamic> _taskConfig = {};
-
-  ConfigResolver({
-    required ConfigLoader loader,
-    required Map<String, dynamic> registry,
-  })  : _loader = loader,
-        _registry = registry;
-
-  // ── Overlay setters ────────────────────────────────────────────────────────
-
-  void setUserPreferences(Map<String, dynamic> prefs) {
-    _userPrefs = prefs;
-  }
-
-  void setTaskConfig(Map<String, dynamic> taskConfig) {
-    _taskConfig = taskConfig;
-  }
-
-  void clearTaskConfig() {
-    _taskConfig = {};
-  }
-
-  // ── Core resolution ────────────────────────────────────────────────────────
-
-  /// Returns the resolved value for [key], traversing the hierarchy.
-  ///
-  /// [key] uses dot notation: 'schedule.reminder_options.options_minutes'
-  ///
-  /// Returns null if the key is not found at any level.
-  dynamic getValue(String key) {
+  /// Resolve a dot-notation key through the hierarchy.
+  /// e.g. 'schedule.default_time' → checks user_prefs first, then global_config
+  T? get<T>(String key) {
     // 1. User preferences
-    final userVal = _getNestedValue(_userPrefs, key);
-    if (_isValidValue(userVal)) return userVal;
+    final userVal = _getNestedValue(userPreferences, key);
+    if (userVal is T) return userVal;
 
-    // 2. Task config
-    final taskVal = _getNestedValue(_taskConfig, key);
-    if (_isValidValue(taskVal)) return taskVal;
+    // 2. Global config
+    final globalVal = _getNestedValue(globalConfig, key);
+    if (globalVal is T) return globalVal;
 
-    // 3. Global config
-    return _getGlobalValue(key);
+    return null;
   }
 
-  /// Convenience: returns value as String, or [fallback] if not found/wrong type.
-  String getString(String key, {String fallback = ''}) {
-    final val = getValue(key);
-    if (val is String) return val;
-    return fallback;
+  /// Resolve with a fallback value if key not found in any layer
+  T getOrDefault<T>(String key, T fallback) {
+    return get<T>(key) ?? fallback;
   }
 
-  /// Convenience: returns value as bool, or [fallback] if not found/wrong type.
-  bool getBool(String key, {bool fallback = false}) {
-    final val = getValue(key);
-    if (val is bool) return val;
-    return fallback;
+  /// Resolve a location override for a specific task.
+  /// If task has override_keys — use those.
+  /// Otherwise use the global default_locations_keys.
+  /// Result is intersected with user's confirmed home locations.
+  List<String> resolveLocationKeys({
+    required LocationConfig? locationConfig,
+    required List<String> userHomeLocationKeys,
+    required List<String> customLocationKeys,
+  }) {
+    if (locationConfig == null || !locationConfig.enabled) return [];
+
+    // Determine the candidate list
+    final List<String> candidates =
+        locationConfig.overrideKeys?.isNotEmpty == true
+        ? locationConfig.overrideKeys!
+        : _getGlobalLocationKeys();
+
+    // Always include location.whole_home
+    final allUserLocations = {
+      ...userHomeLocationKeys,
+      ...customLocationKeys,
+      'location.whole_home',
+    };
+
+    // Intersect candidates with what the user confirmed they have
+    return candidates.where((key) => allUserLocations.contains(key)).toList();
   }
 
-  /// Convenience: returns value as int, or [fallback] if not found/wrong type.
-  int getInt(String key, {int fallback = 0}) {
-    final val = getValue(key);
-    if (val is int) return val;
-    if (val is double) return val.toInt();
-    return fallback;
+  List<String> _getGlobalLocationKeys() {
+    final locations = _getNestedValue(
+      globalConfig,
+      'location.default_locations_keys',
+    );
+    if (locations is List) return locations.cast<String>();
+    return _hardcodedLocationKeys;
   }
 
-  /// Convenience: returns value as double, or [fallback] if not found/wrong type.
-  double getDouble(String key, {double fallback = 0.0}) {
-    final val = getValue(key);
-    if (val is double) return val;
-    if (val is int) return val.toDouble();
-    return fallback;
-  }
-
-  /// Convenience: returns value as List, or empty list if not found/wrong type.
-  List<T> getList<T>(String key) {
-    final val = getValue(key);
-    if (val is List) return val.cast<T>();
-    return [];
-  }
-
-  /// Convenience: returns value as Map, or empty map if not found/wrong type.
-  Map<String, dynamic> getMap(String key) {
-    final val = getValue(key);
-    if (val is Map<String, dynamic>) return val;
-    return {};
-  }
-
-  // ── Global config resolution ───────────────────────────────────────────────
-
-  dynamic _getGlobalValue(String key) {
-    final fileName = _resolveConfigFile(key);
-    if (fileName == null) return null;
-
-    final config = _globalConfigs[fileName];
-    if (config == null) return null;
-
-    return _getNestedValue(config, key);
-  }
-
-  /// Pre-loads a global config file into the resolver's cache.
-  /// Called by ConfigResolverProvider after each file is loaded.
-  void cacheGlobalConfig(String fileName, Map<String, dynamic> config) {
-    _globalConfigs[fileName] = config;
-  }
-
-  // ── Registry lookup ────────────────────────────────────────────────────────
-
-  /// Finds which config file owns the given key using the registry.
-  ///
-  /// More specific prefixes take priority:
-  ///   'notification.alarm.*' beats 'notification.*'
-  String? _resolveConfigFile(String key) {
-    final registryEntries = _registry['registry'] as Map<String, dynamic>?;
-    if (registryEntries == null) return null;
-
-    String? bestMatch;
-    int bestMatchLength = 0;
-
-    for (final entry in registryEntries.entries) {
-      final pattern = entry.key; // e.g. 'notification.*'
-      final prefix = pattern.endsWith('.*')
-          ? pattern.substring(0, pattern.length - 2)
-          : pattern;
-
-      if (key.startsWith(prefix) && prefix.length > bestMatchLength) {
-        bestMatch = (entry.value as Map<String, dynamic>)['file'] as String?;
-        bestMatchLength = prefix.length;
+  dynamic _getNestedValue(Map<String, dynamic> map, String dotKey) {
+    final parts = dotKey.split('.');
+    dynamic current = map;
+    for (final part in parts) {
+      if (current is Map<String, dynamic> && current.containsKey(part)) {
+        current = current[part];
+      } else {
+        return null;
       }
     }
-
-    return bestMatch;
-  }
-
-  // ── Nested value accessor ──────────────────────────────────────────────────
-
-  /// Traverses a nested map using dot-separated [key].
-  ///
-  /// e.g. 'schedule.reminder_options.options_minutes' navigates:
-  ///   map['schedule']['reminder_options']['options_minutes']
-  dynamic _getNestedValue(Map<String, dynamic> map, String key) {
-    final parts = key.split('.');
-    dynamic current = map;
-
-    for (final part in parts) {
-      if (current is! Map<String, dynamic>) return null;
-      current = current[part];
-      if (current == null) return null;
-    }
-
     return current;
   }
 
-  /// Returns true if value is non-null and non-empty-string.
-  bool _isValidValue(dynamic value) {
-    if (value == null) return false;
-    if (value is String && value.isEmpty) return false;
-    return true;
+  /// Resolve the effective reminder options for a task.
+  /// Order: user_preferred_reminders → task_config → global defaults
+  List<int> resolveReminderOptions(ReminderConfig? taskReminders) {
+    // User global preferred reminder options
+    final userReminders = get<List>(
+      'schedule.reminder_options.options_minutes',
+    );
+    if (userReminders != null) return userReminders.cast<int>();
+
+    // Task-specific options
+    if (taskReminders != null) return taskReminders.optionsMinutes;
+
+    // Global fallback
+    return get<List>(
+          'schedule.reminder_options.default_options',
+        )?.cast<int>() ??
+        [10, 30, 60];
   }
+
+  /// Resolve the effective default reminder selections for a task.
+  List<int> resolveDefaultReminders(ReminderConfig? taskReminders) {
+    if (taskReminders != null) return taskReminders.defaultSelectedMinutes;
+    return get<List>(
+          'schedule.reminder_options.default_selected',
+        )?.cast<int>() ??
+        [30];
+  }
+}
+
+// Hardcoded fallback location keys (mirrors ui-global-config.json)
+// Used if global config is unavailable
+const List<String> _hardcodedLocationKeys = [
+  'location.living_room',
+  'location.bedroom',
+  'location.second_bedroom',
+  'location.third_bedroom',
+  'location.bathroom',
+  'location.ensuite',
+  'location.kitchen',
+  'location.dining_room',
+  'location.hallway',
+  'location.landing',
+  'location.stairs',
+  'location.home_office',
+  'location.utility_room',
+  'location.conservatory',
+  'location.garage',
+  'location.garden',
+  'location.shed',
+  'location.driveway',
+  'location.loft',
+  'location.cellar',
+  'location.porch',
+  'location.whole_home',
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Riverpod provider
+// ─────────────────────────────────────────────────────────────────────────────
+
+@riverpod
+Future<ConfigResolver> configResolver(ConfigResolverRef ref) async {
+  final loader = ref.watch(configLoaderProvider);
+
+  // Load global configs in parallel
+  final results = await Future.wait([
+    loader.load('config/ui-global-config.json'),
+    loader.load('config/schedule-global-config.json'),
+  ]);
+
+  // Merge global configs into one flat map
+  final globalConfig = <String, dynamic>{...results[0], ...results[1]};
+
+  // User preferences — empty map until user preferences Isar model is loaded
+  // Will be replaced by a proper provider once PreferencesRepository is wired
+  const userPreferences = <String, dynamic>{};
+
+  return ConfigResolver(
+    globalConfig: globalConfig,
+    userPreferences: userPreferences,
+  );
 }

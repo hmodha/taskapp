@@ -1,81 +1,59 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-// ── Command base ───────────────────────────────────────────────────────────────
+part 'commands/command.g.dart';
 
-/// Base class for all commands in the app.
-///
-/// Every user action that mutates state is implemented as a Command.
-/// This architecture enables:
-///   - Future voice input: voice constructs and dispatches the same Commands
-///   - Logging: every mutation is logged in one place (CommandDispatcher)
-///   - Undo: Commands can store pre-state for future undo support
-///   - Testability: commands are plain Dart objects, easy to unit test
-abstract class Command {
-  /// Human-readable command name for logging.
-  String get name;
+// ─────────────────────────────────────────────────────────────────────────────
+// Command base class
+// All user-initiated actions are Commands — ready for voice/automation.
+// ─────────────────────────────────────────────────────────────────────────────
 
-  /// Execute the command. Returns a [CommandResult].
-  Future<CommandResult> execute();
+abstract class Command<T> {
+  const Command();
+
+  /// Execute the command. Returns a result or throws on failure.
+  Future<T> execute(Ref ref);
+
+  /// Human-readable description for logging and voice output
+  String get description;
 }
 
-// ── CommandResult ──────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// CommandResult
+// ─────────────────────────────────────────────────────────────────────────────
 
-sealed class CommandResult {
-  const CommandResult();
-}
+class CommandResult<T> {
+  const CommandResult.success(this.data) : error = null, isSuccess = true;
 
-class CommandSuccess extends CommandResult {
-  final dynamic data;
-  const CommandSuccess([this.data]);
-}
+  const CommandResult.failure(this.error) : data = null, isSuccess = false;
 
-class CommandFailure extends CommandResult {
-  final String message;
+  final T? data;
   final Object? error;
-  const CommandFailure(this.message, {this.error});
+  final bool isSuccess;
+
+  bool get isFailure => !isSuccess;
 }
 
-// ── CommandDispatcher ──────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// CommandDispatcher
+// ─────────────────────────────────────────────────────────────────────────────
 
-/// Dispatches commands and handles logging, error reporting.
-///
-/// All UI interactions that change state must go through this dispatcher.
-/// Direct repository calls from UI are forbidden.
 class CommandDispatcher {
-  final bool enableLogging;
+  CommandDispatcher(this._ref);
 
-  const CommandDispatcher({this.enableLogging = false});
+  final Ref _ref;
 
-  /// Dispatches a command and returns its result.
-  ///
-  /// Handles:
-  ///   - Logging (if enabled in app-global-config.json)
-  ///   - Error wrapping — unhandled exceptions become CommandFailure
-  ///   - Future: undo stack, analytics events
-  Future<CommandResult> dispatch(Command command) async {
-    if (enableLogging) {
-      debugPrint('[Command] → ${command.name}');
-    }
-
+  Future<CommandResult<T>> dispatch<T>(Command<T> command) async {
     try {
-      final result = await command.execute();
-
-      if (enableLogging) {
-        if (result is CommandSuccess) {
-          debugPrint('[Command] ✓ ${command.name}');
-        } else if (result is CommandFailure) {
-          debugPrint('[Command] ✗ ${command.name}: ${result.message}');
-        }
-      }
-
-      return result;
-
-    } catch (e, stack) {
-      debugPrint('[Command] ✗ ${command.name} threw: $e\n$stack');
-      return CommandFailure(
-        'Unexpected error in ${command.name}',
-        error: e,
-      );
+      final result = await command.execute(_ref);
+      return CommandResult.success(result);
+    } catch (e) {
+      return CommandResult.failure(e);
     }
   }
+}
+
+@riverpod
+CommandDispatcher commandDispatcher(CommandDispatcherRef ref) {
+  return CommandDispatcher(ref);
 }

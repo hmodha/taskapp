@@ -1,101 +1,158 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../../core/theme/midnight_theme.dart';
-import '../models/schedule_form_state.dart';
-import '../providers/schedule_providers.dart';
+import '../../../core/config/config_models.dart';
+import '../../../core/theme/midnight_focus_theme.dart';
 import '../notifiers/schedule_notifier.dart';
 
-/// Handles the full repeat section of the schedule screen.
-/// Renders the correct sub-widget based on selected repeat frequency.
 class RepeatSection extends ConsumerWidget {
-  final ScheduleFormArgs args;
-  const RepeatSection({super.key, required this.args});
+  const RepeatSection({
+    super.key,
+    required this.taskConfig,
+    required this.notifierParams,
+  });
+
+  final TaskConfig taskConfig;
+  final ({String categoryId, String taskConfigId}) notifierParams;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state    = ref.watch(scheduleFormProvider(args));
-    final notifier = ref.read(scheduleFormProvider(args).notifier);
-    final l10n     = AppLocalizations.of(context)!;
+    final form = ref.watch(scheduleFormNotifierProvider(taskConfig));
+    final notifier = ref.read(scheduleFormNotifierProvider(taskConfig).notifier);
 
-    // Determine which repeats are available for this task
-    final allowedRepeats = notifier.taskConfig?.allowedRepeats ??
-        RepeatFrequency.values.map((r) => r.configKey).toList();
+    return _SectionCard(
+      title: 'Repeat',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Repeat option chips
+          _RepeatChips(
+            allowed:  taskConfig.allowedRepeats,
+            selected: form.repeatOption,
+            onSelect: notifier.setRepeat,
+          ),
+          const SizedBox(height: 20),
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Repeat frequency selector
-        _RepeatChips(
-          allowedRepeats: allowedRepeats,
-          selected:       state.repeatFrequency,
-          onSelect:       notifier.setRepeatFrequency,
-          l10n:           l10n,
-        ),
-        const SizedBox(height: MidnightTheme.lg),
-
-        // Sub-widget per frequency
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          child: switch (state.repeatFrequency) {
-            RepeatFrequency.daily     => _DailySection(args: args, key: const ValueKey('daily')),
-            RepeatFrequency.weekly    => _WeeklySection(args: args, key: const ValueKey('weekly')),
-            RepeatFrequency.biweekly  => _WeeklySection(args: args, key: const ValueKey('biweekly')),
-            RepeatFrequency.monthly   => _MonthlySection(args: args, key: const ValueKey('monthly')),
-            RepeatFrequency.quarterly => _MonthlySection(args: args, key: const ValueKey('quarterly')),
-            RepeatFrequency.yearly    => _YearlySection(args: args, key: const ValueKey('yearly')),
-            RepeatFrequency.never     => const SizedBox.shrink(key: ValueKey('never')),
-          },
-        ),
-      ],
+          // Sub-section based on selected repeat
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: _repeatSubSection(form, notifier),
+          ),
+        ],
+      ),
     );
+  }
+
+  Widget _repeatSubSection(ScheduleFormState form, ScheduleFormNotifier notifier) {
+    switch (form.repeatOption) {
+      case RepeatOption.never:
+        return _DateTimePicker(
+          key: const ValueKey('never'),
+          label: 'On date',
+          time: form.scheduledTimes.first,
+          onTimeChanged: (t) => notifier.setTime(t),
+        );
+
+      case RepeatOption.daily:
+        return _MultiTimePicker(
+          key: const ValueKey('daily'),
+          taskConfig:    taskConfig,
+          times:         form.scheduledTimes,
+          onAdd:         notifier.addTime,
+          onRemove:      notifier.removeTime,
+          onTimeChanged: notifier.setTime,
+        );
+
+      case RepeatOption.weekly:
+      case RepeatOption.biweekly:
+        return _WeeklyPicker(
+          key:              ValueKey(form.repeatOption.name),
+          times:            form.scheduledTimes,
+          selectedWeekdays: form.scheduledWeekdays,
+          onToggleDay:      notifier.toggleWeekday,
+          onTimeChanged:    (t) => notifier.setTime(t),
+        );
+
+      case RepeatOption.monthly:
+        return _MonthlyPicker(
+          key:              const ValueKey('monthly'),
+          monthlyMode:      form.monthlyMode ?? 'specific_date',
+          specificDate:     form.monthlySpecificDate ?? 1,
+          shortFallback:    form.monthlyShortMonthFallback ?? 'use_last_day',
+          time:             form.scheduledTimes.first,
+          onModeChanged:    notifier.setMonthlyMode,
+          onDateChanged:    notifier.setMonthlySpecificDate,
+          onFallbackChanged:notifier.setMonthlyShortFallback,
+          onTimeChanged:    (t) => notifier.setTime(t),
+        );
+
+      case RepeatOption.quarterly:
+        return _QuarterlyPicker(
+          key:  const ValueKey('quarterly'),
+          time: form.scheduledTimes.first,
+          onTimeChanged: (t) => notifier.setTime(t),
+        );
+
+      case RepeatOption.yearly:
+        return _YearlyPicker(
+          key:          const ValueKey('yearly'),
+          yearlyConfig: taskConfig.yearlyConfig ?? YearlyConfig.defaults,
+          selectedDates: form.scheduledYearlyDates,
+          time:         form.scheduledTimes.first,
+          onDateSelected: notifier.setYearlyDate,
+          onTimeChanged:  (t) => notifier.setTime(t),
+        );
+    }
   }
 }
 
-// ── Repeat chips ──────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Repeat option chips
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _RepeatChips extends StatelessWidget {
-  final List<String> allowedRepeats;
-  final RepeatFrequency selected;
-  final ValueChanged<RepeatFrequency> onSelect;
-  final AppLocalizations l10n;
-
   const _RepeatChips({
-    required this.allowedRepeats,
+    required this.allowed,
     required this.selected,
     required this.onSelect,
-    required this.l10n,
   });
+
+  final List<RepeatOption> allowed;
+  final RepeatOption selected;
+  final ValueChanged<RepeatOption> onSelect;
 
   @override
   Widget build(BuildContext context) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: allowedRepeats.map((key) {
-        final freq    = RepeatFrequency.values.firstWhere((r) => r.configKey == key);
-        final isActive = freq == selected;
-
+      children: allowed.map((option) {
+        final isSelected = option == selected;
         return GestureDetector(
-          onTap: () => onSelect(freq),
+          onTap: () => onSelect(option),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: isActive
-                  ? MidnightTheme.primary.withOpacity(0.15)
-                  : MidnightTheme.surface2,
-              borderRadius: BorderRadius.circular(MidnightTheme.radiusPill),
+              color: isSelected
+                  ? MidnightFocusTheme.primary
+                  : MidnightFocusTheme.surfaceElevated,
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: isActive ? MidnightTheme.primary : MidnightTheme.border,
+                color: isSelected
+                    ? MidnightFocusTheme.primary
+                    : MidnightFocusTheme.border,
               ),
             ),
             child: Text(
-              _label(freq, l10n),
-              style: MidnightTheme.bodyMedium.copyWith(
-                color: isActive ? MidnightTheme.primary : MidnightTheme.textSecondary,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+              _label(option),
+              style: TextStyle(
+                fontFamily:  'Sora',
+                fontSize:    13,
+                fontWeight:  FontWeight.w500,
+                color:       isSelected
+                    ? Colors.white
+                    : MidnightFocusTheme.textSecondary,
               ),
             ),
           ),
@@ -104,145 +161,212 @@ class _RepeatChips extends StatelessWidget {
     );
   }
 
-  String _label(RepeatFrequency freq, AppLocalizations l10n) => switch (freq) {
-    RepeatFrequency.never     => l10n.repeatNever,
-    RepeatFrequency.daily     => l10n.repeatDaily,
-    RepeatFrequency.weekly    => l10n.repeatWeekly,
-    RepeatFrequency.biweekly  => l10n.repeatBiweekly,
-    RepeatFrequency.monthly   => l10n.repeatMonthly,
-    RepeatFrequency.quarterly => l10n.repeatQuarterly,
-    RepeatFrequency.yearly    => l10n.repeatYearly,
-  };
+  String _label(RepeatOption option) {
+    const labels = {
+      RepeatOption.never:     'Never',
+      RepeatOption.daily:     'Daily',
+      RepeatOption.weekly:    'Weekly',
+      RepeatOption.biweekly:  'Every 2 weeks',
+      RepeatOption.monthly:   'Monthly',
+      RepeatOption.quarterly: 'Quarterly',
+      RepeatOption.yearly:    'Yearly',
+    };
+    return labels[option] ?? option.name;
+  }
 }
 
-// ── Daily section ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Time picker row
+// ─────────────────────────────────────────────────────────────────────────────
 
-class _DailySection extends ConsumerWidget {
-  final ScheduleFormArgs args;
-  const _DailySection({super.key, required this.args});
+class _DateTimePicker extends StatelessWidget {
+  const _DateTimePicker({
+    super.key,
+    required this.label,
+    required this.time,
+    required this.onTimeChanged,
+  });
+
+  final String label;
+  final String time;
+  final ValueChanged<String> onTimeChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state    = ref.watch(scheduleFormProvider(args));
-    final notifier = ref.read(scheduleFormProvider(args).notifier);
-    final l10n     = AppLocalizations.of(context)!;
-    final canAdd   = notifier.canAddMoreTimes;
-    final isMulti  = notifier.multipleTimesEnabled;
+  Widget build(BuildContext context) {
+    return _TimePickerRow(
+      label:         label,
+      time:          time,
+      onTimeChanged: onTimeChanged,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Multi-time picker (for daily medication etc.)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _MultiTimePicker extends StatelessWidget {
+  const _MultiTimePicker({
+    super.key,
+    required this.taskConfig,
+    required this.times,
+    required this.onAdd,
+    required this.onRemove,
+    required this.onTimeChanged,
+  });
+
+  final TaskConfig taskConfig;
+  final List<String> times;
+  final ValueChanged<String> onAdd;
+  final ValueChanged<int> onRemove;
+  final void Function(String time, {int index}) onTimeChanged;
+
+  bool get _canAdd {
+    final max = taskConfig.multipleTimesPerDay?.maxTimes ?? 1;
+    return taskConfig.multipleTimesPerDay != null && times.length < max;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final multiConfig = taskConfig.multipleTimesPerDay;
+    final timeLabelKey = multiConfig?.timeLabelKey;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Time slots
-        ...state.scheduledTimes.asMap().entries.map(
-          (entry) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _TimePickerRow(
-              label:    isMulti ? '${l10n.taskHealthMedicationDoseTimeLabel.replaceFirst('{n}', '${entry.key + 1}')}' : 'Time',
-              time:     entry.value,
-              onTap:    () => _pickTime(context, entry.key, entry.value, notifier),
-              onRemove: state.scheduledTimes.length > 1
-                  ? () => notifier.removeTime(entry.key)
-                  : null,
-            ),
-          ),
-        ),
+        ...times.asMap().entries.map((entry) {
+          final index = entry.key;
+          final time  = entry.value;
+          final label = timeLabelKey != null
+              ? 'Dose ${index + 1}'   // TODO: resolve i18n key with index
+              : 'Time ${index + 1}';
 
-        // Add time button (multi-time tasks only)
-        if (isMulti && canAdd)
-          _AddTimeButton(
-            label:  l10n.repeatDailyAddTime,
-            onTap:  () => _pickTime(
-              context,
-              state.scheduledTimes.length,
-              '09:00',
-              notifier,
-              isNew: true,
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _TimePickerRow(
+                    label:         times.length > 1 ? label : 'Time',
+                    time:          time,
+                    onTimeChanged: (t) => onTimeChanged(t, index: index),
+                  ),
+                ),
+                if (times.length > 1) ...[
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => onRemove(index),
+                    child: Container(
+                      width: 36, height: 36,
+                      decoration: BoxDecoration(
+                        color:        MidnightFocusTheme.surfaceElevated,
+                        borderRadius: BorderRadius.circular(8),
+                        border:       Border.all(color: MidnightFocusTheme.border),
+                      ),
+                      child: const Icon(
+                        Icons.remove,
+                        color: MidnightFocusTheme.error,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        }),
+
+        if (_canAdd)
+          GestureDetector(
+            onTap: () => onAdd('09:00'),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.add_circle_outline,
+                    color: MidnightFocusTheme.primary,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    multiConfig?.addTimeLabelKey != null
+                        ? 'Add another dose time'
+                        : 'Add time',
+                    style: const TextStyle(
+                      fontFamily:  'Sora',
+                      fontSize:    13,
+                      color:       MidnightFocusTheme.primary,
+                      fontWeight:  FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
       ],
     );
   }
-
-  Future<void> _pickTime(
-    BuildContext context,
-    int index,
-    String current,
-    ScheduleFormNotifier notifier, {
-    bool isNew = false,
-  }) async {
-    final parts = current.split(':');
-    final initial = TimeOfDay(
-      hour:   int.parse(parts[0]),
-      minute: int.parse(parts[1]),
-    );
-
-    final picked = await showTimePicker(
-      context:     context,
-      initialTime: initial,
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx),
-        child: child!,
-      ),
-    );
-
-    if (picked != null) {
-      final formatted =
-          '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-      if (isNew) {
-        notifier.addTime(formatted);
-      } else {
-        notifier.setTime(index, formatted);
-      }
-    }
-  }
 }
 
-// ── Weekly section ────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Weekly picker — day chips + time
+// ─────────────────────────────────────────────────────────────────────────────
 
-class _WeeklySection extends ConsumerWidget {
-  final ScheduleFormArgs args;
-  const _WeeklySection({super.key, required this.args});
+class _WeeklyPicker extends StatelessWidget {
+  const _WeeklyPicker({
+    super.key,
+    required this.times,
+    required this.selectedWeekdays,
+    required this.onToggleDay,
+    required this.onTimeChanged,
+  });
+
+  final List<String> times;
+  final List<int> selectedWeekdays;
+  final ValueChanged<int> onToggleDay;
+  final ValueChanged<String> onTimeChanged;
 
   static const _days = [
-    'monday', 'tuesday', 'wednesday', 'thursday',
-    'friday', 'saturday', 'sunday',
+    (1, 'M'), (2, 'T'), (3, 'W'), (4, 'T'), (5, 'F'), (6, 'S'), (7, 'S'),
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state    = ref.watch(scheduleFormProvider(args));
-    final notifier = ref.read(scheduleFormProvider(args).notifier);
-    final l10n     = AppLocalizations.of(context)!;
-
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Day selector row
         Row(
-          children: _days.map((day) {
-            final isSelected = state.selectedDays.contains(day);
-            return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: GestureDetector(
-                  onTap: () => notifier.toggleDay(day),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? MidnightTheme.primary
-                          : MidnightTheme.surface2,
-                      borderRadius: BorderRadius.circular(MidnightTheme.radiusSm),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      _dayShort(day, l10n),
-                      style: MidnightTheme.bodySmall.copyWith(
-                        color:      isSelected ? MidnightTheme.textOnAccent : MidnightTheme.textSecondary,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                        fontSize:   11,
-                      ),
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: _days.map((d) {
+            final (num, label) = d;
+            final selected = selectedWeekdays.contains(num);
+            return GestureDetector(
+              onTap: () => onToggleDay(num),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? MidnightFocusTheme.primary
+                      : MidnightFocusTheme.surfaceElevated,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: selected
+                        ? MidnightFocusTheme.primary
+                        : MidnightFocusTheme.border,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily:  'Sora',
+                      fontSize:    13,
+                      fontWeight:  FontWeight.w600,
+                      color:       selected
+                          ? Colors.white
+                          : MidnightFocusTheme.textSecondary,
                     ),
                   ),
                 ),
@@ -250,399 +374,387 @@ class _WeeklySection extends ConsumerWidget {
             );
           }).toList(),
         ),
-
-        const SizedBox(height: MidnightTheme.lg),
-
-        // Time for selected days
+        const SizedBox(height: 16),
         _TimePickerRow(
-          label: 'Time',
-          time:  state.scheduledTimes.isNotEmpty ? state.scheduledTimes.first : '09:00',
-          onTap: () async {
-            final parts = (state.scheduledTimes.isNotEmpty
-                    ? state.scheduledTimes.first
-                    : '09:00')
-                .split(':');
-            final picked = await showTimePicker(
-              context:     context,
-              initialTime: TimeOfDay(
-                hour:   int.parse(parts[0]),
-                minute: int.parse(parts[1]),
-              ),
-            );
-            if (picked != null) {
-              notifier.setTime(
-                0,
-                '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}',
-              );
-            }
-          },
+          label:         'Time',
+          time:          times.first,
+          onTimeChanged: onTimeChanged,
         ),
       ],
     );
   }
-
-  String _dayShort(String day, AppLocalizations l10n) => switch (day) {
-    'monday'    => l10n.dayMonShort,
-    'tuesday'   => l10n.dayTueShort,
-    'wednesday' => l10n.dayWedShort,
-    'thursday'  => l10n.dayThuShort,
-    'friday'    => l10n.dayFriShort,
-    'saturday'  => l10n.daySatShort,
-    'sunday'    => l10n.daySunShort,
-    _           => day.substring(0, 3),
-  };
 }
 
-// ── Monthly section ───────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Monthly picker
+// ─────────────────────────────────────────────────────────────────────────────
 
-class _MonthlySection extends ConsumerWidget {
-  final ScheduleFormArgs args;
-  const _MonthlySection({super.key, required this.args});
+class _MonthlyPicker extends StatelessWidget {
+  const _MonthlyPicker({
+    super.key,
+    required this.monthlyMode,
+    required this.specificDate,
+    required this.shortFallback,
+    required this.time,
+    required this.onModeChanged,
+    required this.onDateChanged,
+    required this.onFallbackChanged,
+    required this.onTimeChanged,
+  });
+
+  final String monthlyMode;
+  final int specificDate;
+  final String shortFallback;
+  final String time;
+  final ValueChanged<String> onModeChanged;
+  final ValueChanged<int> onDateChanged;
+  final ValueChanged<String> onFallbackChanged;
+  final ValueChanged<String> onTimeChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state    = ref.watch(scheduleFormProvider(args));
-    final notifier = ref.read(scheduleFormProvider(args).notifier);
-    final l10n     = AppLocalizations.of(context)!;
-
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Tabs: First/Last Day | Specific Date
-        _SegmentedTabs(
-          options: [
-            _TabOption(label: l10n.repeatMonthlyTabFirstLast, value: MonthlyOption.firstDay),
-            _TabOption(label: l10n.repeatMonthlyTabDate,      value: MonthlyOption.specificDate),
+        // Mode tabs
+        Row(
+          children: [
+            _ModeTab(label: 'First day',     value: 'first_day',     selected: monthlyMode, onTap: onModeChanged),
+            const SizedBox(width: 8),
+            _ModeTab(label: 'Last day',      value: 'last_day',      selected: monthlyMode, onTap: onModeChanged),
+            const SizedBox(width: 8),
+            _ModeTab(label: 'Specific date', value: 'specific_date', selected: monthlyMode, onTap: onModeChanged),
           ],
-          selected: state.monthlyOption == MonthlyOption.specificDate
-              ? MonthlyOption.specificDate
-              : MonthlyOption.firstDay,
-          onSelect: (v) => notifier.setMonthlyOption(v),
         ),
+        const SizedBox(height: 16),
 
-        const SizedBox(height: MidnightTheme.lg),
-
-        if (state.monthlyOption == MonthlyOption.specificDate ||
-            state.monthlyOption == MonthlyOption.firstDay) ...[
-
-          if (state.monthlyOption == MonthlyOption.firstDay)
-            _FirstLastDaySelector(
-              selected: state.monthlyOption,
-              onSelect: notifier.setMonthlyOption,
-              l10n:     l10n,
-            )
-          else
-            _SpecificDateChip(
-              selectedDates: state.selectedDates,
-              onTap:         () => _pickDate(context, notifier),
+        // Specific date picker
+        if (monthlyMode == 'specific_date') ...[
+          Text(
+            'Day of month',
+            style: TextStyle(
+              fontFamily: 'Sora',
+              fontSize: 12,
+              color: MidnightFocusTheme.textSecondary,
             ),
-
-          const SizedBox(height: MidnightTheme.lg),
-
-          _TimePickerRow(
-            label: 'Time',
-            time:  state.scheduledTimes.isNotEmpty ? state.scheduledTimes.first : '09:00',
-            onTap: () => _pickMonthlyTime(context, state, notifier),
           ),
+          const SizedBox(height: 8),
+          _DayOfMonthPicker(
+            selected:  specificDate,
+            onSelect:  onDateChanged,
+          ),
+          const SizedBox(height: 12),
+          // Short month fallback
+          Row(
+            children: [
+              Text(
+                'If month is shorter:',
+                style: TextStyle(fontFamily: 'Sora', fontSize: 13, color: MidnightFocusTheme.textSecondary),
+              ),
+              const SizedBox(width: 8),
+              _ModeTab(label: 'Use last day', value: 'use_last_day', selected: shortFallback, onTap: onFallbackChanged),
+              const SizedBox(width: 8),
+              _ModeTab(label: 'Skip month',   value: 'skip_month',   selected: shortFallback, onTap: onFallbackChanged),
+            ],
+          ),
+          const SizedBox(height: 16),
         ],
+
+        _TimePickerRow(label: 'Time', time: time, onTimeChanged: onTimeChanged),
       ],
     );
   }
+}
 
-  Future<void> _pickDate(BuildContext ctx, ScheduleFormNotifier notifier) async {
-    final picked = await showDatePicker(
-      context:      ctx,
-      initialDate:  DateTime.now(),
-      firstDate:    DateTime.now(),
-      lastDate:     DateTime.now().add(const Duration(days: 365)),
-    );
-    if (picked != null) {
-      notifier.setSelectedDate(
-        '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}',
-      );
-    }
-  }
+class _DayOfMonthPicker extends StatelessWidget {
+  const _DayOfMonthPicker({required this.selected, required this.onSelect});
+  final int selected;
+  final ValueChanged<int> onSelect;
 
-  Future<void> _pickMonthlyTime(
-    BuildContext ctx,
-    ScheduleFormState state,
-    ScheduleFormNotifier notifier,
-  ) async {
-    final parts = (state.scheduledTimes.isNotEmpty
-            ? state.scheduledTimes.first
-            : '09:00')
-        .split(':');
-    final picked = await showTimePicker(
-      context:     ctx,
-      initialTime: TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1])),
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: List.generate(31, (i) {
+        final day  = i + 1;
+        final sel  = day == selected;
+        return GestureDetector(
+          onTap: () => onSelect(day),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 100),
+            width: 36, height: 36,
+            decoration: BoxDecoration(
+              color:        sel ? MidnightFocusTheme.primary : MidnightFocusTheme.surfaceElevated,
+              borderRadius: BorderRadius.circular(8),
+              border:       Border.all(color: sel ? MidnightFocusTheme.primary : MidnightFocusTheme.border),
+            ),
+            child: Center(
+              child: Text(
+                '$day',
+                style: TextStyle(
+                  fontFamily: 'Sora',
+                  fontSize:   12,
+                  fontWeight: FontWeight.w500,
+                  color:      sel ? Colors.white : MidnightFocusTheme.textSecondary,
+                ),
+              ),
+            ),
+          ),
+        );
+      }),
     );
-    if (picked != null) {
-      notifier.setTime(
-        0,
-        '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}',
-      );
-    }
   }
 }
 
-// ── Yearly section ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Quarterly picker
+// ─────────────────────────────────────────────────────────────────────────────
 
-class _YearlySection extends ConsumerWidget {
-  final ScheduleFormArgs args;
-  const _YearlySection({super.key, required this.args});
+class _QuarterlyPicker extends StatelessWidget {
+  const _QuarterlyPicker({super.key, required this.time, required this.onTimeChanged});
+  final String time;
+  final ValueChanged<String> onTimeChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state      = ref.watch(scheduleFormProvider(args));
-    final notifier   = ref.read(scheduleFormProvider(args).notifier);
-    final isSingle   = notifier.isYearlySingleDateOnly;
-    final maxDates   = notifier.yearlyMaxDateSelections;
-
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Helper text
         Text(
-          isSingle
-              ? 'Select the date (once a year)'
-              : 'Select up to $maxDates dates per year',
-          style: MidnightTheme.bodySmall,
+          'Repeats every 3 months on the same date',
+          style: TextStyle(
+            fontFamily: 'Sora',
+            fontSize:   13,
+            color:      MidnightFocusTheme.textSecondary,
+          ),
         ),
         const SizedBox(height: 12),
-
-        // Selected dates display
-        if (state.selectedDates.isEmpty)
-          _AddTimeButton(
-            label: '+ Select date',
-            onTap: () => _pickDate(context, notifier, isSingle, state),
-          )
-        else ...[
-          ...state.selectedDates.map(
-            (d) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _DateChip(
-                date:     d,
-                onRemove: () => notifier.setSelectedDate(d),
-              ),
-            ),
-          ),
-          if (!isSingle && state.selectedDates.length < maxDates)
-            _AddTimeButton(
-              label: '+ Add another date',
-              onTap: () => _pickDate(context, notifier, isSingle, state),
-            ),
-        ],
-
-        if (state.selectedDates.isNotEmpty) ...[
-          const SizedBox(height: MidnightTheme.lg),
-          _TimePickerRow(
-            label: 'Time',
-            time:  state.scheduledTimes.isNotEmpty ? state.scheduledTimes.first : '09:00',
-            onTap: () => _pickTime(context, state, notifier),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Future<void> _pickDate(
-    BuildContext ctx,
-    ScheduleFormNotifier notifier,
-    bool isSingle,
-    ScheduleFormState state,
-  ) async {
-    final picked = await showDatePicker(
-      context:     ctx,
-      initialDate: DateTime.now(),
-      firstDate:   DateTime.now(),
-      lastDate:    DateTime(DateTime.now().year + 2),
-    );
-    if (picked != null) {
-      if (isSingle && state.selectedDates.isNotEmpty) {
-        // Replace existing for single-date tasks (MOT, road tax)
-        notifier.setSelectedDate(state.selectedDates.first); // deselect
-      }
-      notifier.setSelectedDate(
-        '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}',
-      );
-    }
-  }
-
-  Future<void> _pickTime(
-    BuildContext ctx,
-    ScheduleFormState state,
-    ScheduleFormNotifier notifier,
-  ) async {
-    final parts = (state.scheduledTimes.isNotEmpty
-            ? state.scheduledTimes.first
-            : '09:00')
-        .split(':');
-    final picked = await showTimePicker(
-      context:     ctx,
-      initialTime: TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1])),
-    );
-    if (picked != null) {
-      notifier.setTime(
-        0,
-        '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}',
-      );
-    }
-  }
-}
-
-// ── Shared sub-widgets ─────────────────────────────────────────────────────────
-
-class _TimePickerRow extends StatelessWidget {
-  final String label;
-  final String time;
-  final VoidCallback onTap;
-  final VoidCallback? onRemove;
-
-  const _TimePickerRow({
-    required this.label,
-    required this.time,
-    required this.onTap,
-    this.onRemove,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
-            onTap: onTap,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color:        MidnightTheme.surface2,
-                borderRadius: BorderRadius.circular(MidnightTheme.radiusMd),
-                border:       Border.all(color: MidnightTheme.border),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.schedule,
-                      color: MidnightTheme.textMuted, size: 18),
-                  const SizedBox(width: 10),
-                  Text(
-                    label,
-                    style: MidnightTheme.bodySmall.copyWith(
-                      color: MidnightTheme.textMuted,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(time, style: MidnightTheme.taskTime.copyWith(
-                    color: MidnightTheme.primary,
-                    fontWeight: FontWeight.w600,
-                  )),
-                ],
-              ),
-            ),
-          ),
-        ),
-        if (onRemove != null) ...[
-          const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.remove_circle_outline,
-                color: MidnightTheme.textMuted, size: 20),
-            onPressed: onRemove,
-            padding: EdgeInsets.zero,
-          ),
-        ],
+        _TimePickerRow(label: 'Time', time: time, onTimeChanged: onTimeChanged),
       ],
     );
   }
 }
 
-class _AddTimeButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
+// ─────────────────────────────────────────────────────────────────────────────
+// Yearly picker — single date or multi-date calendar
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const _AddTimeButton({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Text(
-          label,
-          style: MidnightTheme.bodyMedium.copyWith(
-            color: MidnightTheme.primary,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DateChip extends StatelessWidget {
-  final String date;
-  final VoidCallback onRemove;
-
-  const _DateChip({required this.date, required this.onRemove});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color:        MidnightTheme.surface2,
-        borderRadius: BorderRadius.circular(MidnightTheme.radiusMd),
-        border:       Border.all(color: MidnightTheme.primary.withOpacity(0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(date, style: MidnightTheme.mono.copyWith(
-            color: MidnightTheme.primary,
-          )),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: onRemove,
-            child: const Icon(Icons.close,
-                color: MidnightTheme.textMuted, size: 16),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SpecificDateChip extends StatelessWidget {
-  final List<String> selectedDates;
-  final VoidCallback onTap;
-
-  const _SpecificDateChip({
+class _YearlyPicker extends StatelessWidget {
+  const _YearlyPicker({
+    super.key,
+    required this.yearlyConfig,
     required this.selectedDates,
-    required this.onTap,
+    required this.time,
+    required this.onDateSelected,
+    required this.onTimeChanged,
   });
+
+  final YearlyConfig yearlyConfig;
+  final List<DateTime> selectedDates;
+  final String time;
+  final ValueChanged<DateTime> onDateSelected;
+  final ValueChanged<String> onTimeChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (yearlyConfig.singleDatePicker || yearlyConfig.maxDateSelections <= 1) ...[
+          // Single date picker — for MOT, Road Tax etc.
+          Text(
+            'Select date (once a year)',
+            style: TextStyle(
+              fontFamily: 'Sora',
+              fontSize:   13,
+              color:      MidnightFocusTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _SingleDatePickerButton(
+            selected: selectedDates.isNotEmpty ? selectedDates.first : null,
+            onSelect: onDateSelected,
+          ),
+        ] else ...[
+          // Multi-date calendar
+          Text(
+            'Select up to ${yearlyConfig.maxDateSelections} dates per year',
+            style: TextStyle(
+              fontFamily: 'Sora',
+              fontSize:   13,
+              color:      MidnightFocusTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...selectedDates.map((d) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _SingleDatePickerButton(
+              selected: d,
+              onSelect: onDateSelected,
+            ),
+          )),
+          if (selectedDates.length < yearlyConfig.maxDateSelections)
+            _SingleDatePickerButton(
+              selected: null,
+              onSelect: onDateSelected,
+            ),
+        ],
+
+        if (yearlyConfig.showTimePicker) ...[
+          const SizedBox(height: 16),
+          _TimePickerRow(label: 'Time', time: time, onTimeChanged: onTimeChanged),
+        ],
+      ],
+    );
+  }
+}
+
+class _SingleDatePickerButton extends StatelessWidget {
+  const _SingleDatePickerButton({this.selected, required this.onSelect});
+  final DateTime? selected;
+  final ValueChanged<DateTime> onSelect;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () async {
+        final picked = await showDatePicker(
+          context:      context,
+          initialDate:  selected ?? DateTime.now(),
+          firstDate:    DateTime.now().subtract(const Duration(days: 1)),
+          lastDate:     DateTime.now().add(const Duration(days: 366)),
+          builder:      (ctx, child) => Theme(
+            data: Theme.of(ctx).copyWith(
+              colorScheme: const ColorScheme.dark(
+                primary:   MidnightFocusTheme.primary,
+                onPrimary: Colors.white,
+                surface:   MidnightFocusTheme.surfaceCard,
+                onSurface: MidnightFocusTheme.textPrimary,
+              ),
+            ),
+            child: child!,
+          ),
+        );
+        if (picked != null) onSelect(picked);
+      },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color:        MidnightTheme.surface2,
-          borderRadius: BorderRadius.circular(MidnightTheme.radiusMd),
-          border:       Border.all(color: MidnightTheme.border),
+          color:        MidnightFocusTheme.surfaceElevated,
+          borderRadius: BorderRadius.circular(12),
+          border:       Border.all(
+            color: selected != null
+                ? MidnightFocusTheme.primary
+                : MidnightFocusTheme.border,
+          ),
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today,
-                color: MidnightTheme.textMuted, size: 18),
+            Icon(
+              Icons.calendar_today_outlined,
+              color: selected != null
+                  ? MidnightFocusTheme.primary
+                  : MidnightFocusTheme.textSecondary,
+              size: 18,
+            ),
             const SizedBox(width: 10),
             Text(
-              selectedDates.isEmpty
-                  ? 'Select date'
-                  : selectedDates.first,
-              style: MidnightTheme.bodyMedium.copyWith(
-                color: selectedDates.isEmpty
-                    ? MidnightTheme.textMuted
-                    : MidnightTheme.textPrimary,
+              selected != null
+                  ? '${selected!.day} ${_month(selected!.month)} ${selected!.year}'
+                  : 'Select date',
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize:   14,
+                color: selected != null
+                    ? MidnightFocusTheme.textPrimary
+                    : MidnightFocusTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _month(int m) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[m - 1];
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared: Time picker row
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _TimePickerRow extends StatelessWidget {
+  const _TimePickerRow({
+    required this.label,
+    required this.time,
+    required this.onTimeChanged,
+  });
+
+  final String label;
+  final String time;
+  final ValueChanged<String> onTimeChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        final parts = time.split(':');
+        final initial = TimeOfDay(
+          hour:   int.tryParse(parts.first) ?? 9,
+          minute: int.tryParse(parts.last)  ?? 0,
+        );
+        final picked = await showTimePicker(
+          context:     context,
+          initialTime: initial,
+          builder: (ctx, child) => Theme(
+            data: Theme.of(ctx).copyWith(
+              colorScheme: const ColorScheme.dark(
+                primary:   MidnightFocusTheme.primary,
+                onPrimary: Colors.white,
+                surface:   MidnightFocusTheme.surfaceCard,
+                onSurface: MidnightFocusTheme.textPrimary,
+              ),
+            ),
+            child: child!,
+          ),
+        );
+        if (picked != null) {
+          final h = picked.hour.toString().padLeft(2, '0');
+          final m = picked.minute.toString().padLeft(2, '0');
+          onTimeChanged('$h:$m');
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color:        MidnightFocusTheme.surfaceElevated,
+          borderRadius: BorderRadius.circular(12),
+          border:       Border.all(color: MidnightFocusTheme.border),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.access_time, color: MidnightFocusTheme.primary, size: 18),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Sora',
+                fontSize:   13,
+                color:      MidnightFocusTheme.textSecondary,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              time,
+              style: const TextStyle(
+                fontFamily: 'Sora',
+                fontSize:   16,
+                fontWeight: FontWeight.w600,
+                color:      MidnightFocusTheme.textPrimary,
               ),
             ),
           ],
@@ -652,69 +764,39 @@ class _SpecificDateChip extends StatelessWidget {
   }
 }
 
-class _FirstLastDaySelector extends StatelessWidget {
-  final MonthlyOption selected;
-  final ValueChanged<MonthlyOption> onSelect;
-  final AppLocalizations l10n;
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared: Mode tab chip
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const _FirstLastDaySelector({
-    required this.selected,
-    required this.onSelect,
-    required this.l10n,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _OptionChip(
-          label:      l10n.repeatMonthlyFirstDay,
-          isSelected: selected == MonthlyOption.firstDay,
-          onTap:      () => onSelect(MonthlyOption.firstDay),
-        ),
-        const SizedBox(width: 8),
-        _OptionChip(
-          label:      l10n.repeatMonthlyLastDay,
-          isSelected: selected == MonthlyOption.lastDay,
-          onTap:      () => onSelect(MonthlyOption.lastDay),
-        ),
-      ],
-    );
-  }
-}
-
-class _OptionChip extends StatelessWidget {
+class _ModeTab extends StatelessWidget {
+  const _ModeTab({required this.label, required this.value, required this.selected, required this.onTap});
   final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _OptionChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
+  final String value;
+  final String selected;
+  final ValueChanged<String> onTap;
 
   @override
   Widget build(BuildContext context) {
+    final isSelected = value == selected;
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => onTap(value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color:        isSelected
-              ? MidnightTheme.primary.withOpacity(0.15)
-              : MidnightTheme.surface2,
-          borderRadius: BorderRadius.circular(MidnightTheme.radiusMd),
+          color:        isSelected ? MidnightFocusTheme.primaryDim : MidnightFocusTheme.surfaceElevated,
+          borderRadius: BorderRadius.circular(8),
           border:       Border.all(
-            color: isSelected ? MidnightTheme.primary : MidnightTheme.border,
+            color: isSelected ? MidnightFocusTheme.primary : MidnightFocusTheme.border,
           ),
         ),
         child: Text(
           label,
-          style: MidnightTheme.bodySmall.copyWith(
-            color:      isSelected ? MidnightTheme.primary : MidnightTheme.textSecondary,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          style: TextStyle(
+            fontFamily:  'Sora',
+            fontSize:    12,
+            fontWeight:  FontWeight.w500,
+            color:       isSelected ? Colors.white : MidnightFocusTheme.textSecondary,
           ),
         ),
       ),
@@ -722,57 +804,42 @@ class _OptionChip extends StatelessWidget {
   }
 }
 
-class _SegmentedTabs<T> extends StatelessWidget {
-  final List<_TabOption<T>> options;
-  final T selected;
-  final ValueChanged<T> onSelect;
+// ─────────────────────────────────────────────────────────────────────────────
+// Section card wrapper — consistent card style for each schedule section
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const _SegmentedTabs({
-    required this.options,
-    required this.selected,
-    required this.onSelect,
-  });
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.title, required this.child});
+  final String title;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color:        MidnightTheme.surface2,
-        borderRadius: BorderRadius.circular(MidnightTheme.radiusMd),
+        color:        MidnightFocusTheme.surfaceCard,
+        borderRadius: BorderRadius.circular(16),
+        border:       Border.all(color: MidnightFocusTheme.border),
       ),
-      child: Row(
-        children: options.map((option) {
-          final isActive = option.value == selected;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onSelect(option.value),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color:        isActive ? MidnightTheme.surface : Colors.transparent,
-                  borderRadius: BorderRadius.circular(MidnightTheme.radiusSm),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  option.label,
-                  style: MidnightTheme.bodySmall.copyWith(
-                    color:      isActive ? MidnightTheme.textPrimary : MidnightTheme.textMuted,
-                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                ),
-              ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontFamily:  'Sora',
+              fontSize:    12,
+              fontWeight:  FontWeight.w600,
+              color:       MidnightFocusTheme.textSecondary,
+              letterSpacing: 0.8,
             ),
-          );
-        }).toList(),
+          ),
+          const SizedBox(height: 14),
+          child,
+        ],
       ),
     );
   }
-}
-
-class _TabOption<T> {
-  final String label;
-  final T value;
-  const _TabOption({required this.label, required this.value});
 }

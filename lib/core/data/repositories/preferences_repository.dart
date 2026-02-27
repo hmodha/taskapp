@@ -1,79 +1,64 @@
-import 'package:isar/isar.dart';
-import '../models/user_preferences.dart';
+import 'package:drift/drift.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-/// Repository for UserPreferences — always a singleton (id = 1).
+import '../app_database.dart';
+import '../../../../models/user_preferences.dart';
+
+part '../../../preferences_repository.g.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PreferencesRepository — singleton UserPreferences row in drift
+// ─────────────────────────────────────────────────────────────────────────────
+
 class PreferencesRepository {
-  final Isar _isar;
+  PreferencesRepository(this._db);
 
-  PreferencesRepository(this._isar);
+  final AppDatabase _db;
 
-  // ── Read ───────────────────────────────────────────────────────────────────
-
-  /// Returns the singleton UserPreferences, creating defaults if not yet saved.
   Future<UserPreferences> get() async {
-    final existing = await _isar.userPreferences.get(1);
-    if (existing != null) return existing;
-    // First launch — create and persist defaults
-    final defaults = UserPreferences();
-    await _isar.writeTxn(() => _isar.userPreferences.put(defaults));
-    return defaults;
+    final row = await (_db.select(
+      _db.userPreferencesTable,
+    )..where((t) => t.id.equals(1))).getSingleOrNull();
+    return row != null ? UserPreferences.fromRow(row) : UserPreferences();
   }
 
-  /// Reactive stream — rebuilds whenever preferences change.
-  Stream<UserPreferences?> watch() =>
-      _isar.userPreferences.watchObject(1, fireImmediately: true);
-
-  // ── Write ──────────────────────────────────────────────────────────────────
-
-  Future<void> save(UserPreferences prefs) async {
-    await _isar.writeTxn(() => _isar.userPreferences.put(prefs));
+  Future<UserPreferences> save(UserPreferences prefs) async {
+    final companion = prefs.toCompanion();
+    await _db.into(_db.userPreferencesTable).insertOnConflictUpdate(companion);
+    return prefs;
   }
 
-  /// Partial update helper — load, mutate, save.
-  Future<void> update(void Function(UserPreferences p) mutate) async {
+  Stream<UserPreferences> watch() {
+    return (_db.select(
+      _db.userPreferencesTable,
+    )..where((t) => t.id.equals(1))).watchSingleOrNull().map(
+      (row) => row != null ? UserPreferences.fromRow(row) : UserPreferences(),
+    );
+  }
+
+  Future<void> addCustomLocation(String locationName) async {
     final prefs = await get();
-    mutate(prefs);
+    if (!prefs.customLocationNames.contains(locationName)) {
+      prefs.customLocationNames = [...prefs.customLocationNames, locationName];
+      await save(prefs);
+    }
+  }
+
+  Future<void> removeCustomLocation(String locationName) async {
+    final prefs = await get();
+    prefs.customLocationNames = prefs.customLocationNames
+        .where((l) => l != locationName)
+        .toList();
     await save(prefs);
   }
+}
 
-  // ── Convenience setters ────────────────────────────────────────────────────
+@riverpod
+PreferencesRepository preferencesRepository(PreferencesRepositoryRef ref) {
+  return PreferencesRepository(ref.watch(databaseProvider));
+}
 
-  Future<void> setSetupCompleted(bool value) =>
-      update((p) => p.setupCompleted = value);
-
-  Future<void> setActiveTheme(String themeId) =>
-      update((p) => p.activeTheme = themeId);
-
-  Future<void> setActiveLanguage(String locale) =>
-      update((p) => p.activeLanguage = locale);
-
-  Future<void> setTextSize(String size) =>
-      update((p) => p.textSize = size);
-
-  Future<void> setHomeTimezone(String tz) =>
-      update((p) => p.homeTimezone = tz);
-
-  Future<void> setSystemTimezone(String tz) =>
-      update((p) => p.systemTimezone = tz);
-
-  Future<void> setHomeLocations(List<String> locations) =>
-      update((p) => p.homeLocations = locations);
-
-  Future<void> addCustomLocation(String location) =>
-      update((p) {
-        if (!p.customLocations.contains(location)) {
-          p.customLocations = [...p.customLocations, location];
-        }
-      });
-
-  Future<void> setVisibleCategoryIds(List<String> ids) =>
-      update((p) => p.visibleCategoryIds = ids);
-
-  Future<void> setSubscription({
-    required String tier,
-    DateTime? expiry,
-  }) => update((p) {
-    p.subscriptionTier = tier;
-    p.subscriptionExpiry = expiry;
-  });
+@riverpod
+Future<UserPreferences> userPreferences(UserPreferencesRef ref) async {
+  return ref.watch(preferencesRepositoryProvider).get();
 }

@@ -1,0 +1,246 @@
+{
+  "@@locale": "en",
+
+  "appName": "TaskApp",
+  "@appName": { "description": "Application name" },
+
+  "generalSave": "Save",
+  "generalCancel": "Cancel",
+  "generalDone": "Done",
+  "generalEdit": "Edit",
+  "generalDelete": "Delete",
+  "generalConfirm": "Confirm",
+  "generalBack": "Back",
+  "generalNext": "Next",
+  "generalSkip": "Skip",
+  "generalClose": "Close",
+  "generalYes": "Yes",
+  "generalNo": "No",
+  "generalAdd": "Add",
+  "generalRemove": "Remove",
+  "generalLoading": "Loading…",
+  "generalError": "Something went wrong",
+  "generalRetry": "Retry",
+
+  "categoryScreenTitle": "Categories",
+  "@categoryScreenTitle": { "description": "Title for the category selection screen" },
+
+  "categoryVehicleLabel": "Vehicle",
+  "categoryHealthLabel": "Health",
+  "categoryHomeCleaningLabel": "Home Cleaning",
+  "categoryBinCollectionLabel": "Bin Collection",
+  "categoryCustomLabel": "My Tasks",
+
+  "taskListScreenTitle": "Choose a task",
+  "taskListEmptyMessage": "No tasks available in this category",
+  "taskListCustomTaskButton": "Create custom task",
+
+  "scheduleScreenTitleNew": "Schedule Task",
+  "scheduleScreenTitleEdit": "Edit Task",
+  "scheduleScreenSaveWord": "Scheduled!",
+  "scheduleScreenSaveConfirmTitle": "Task scheduled",
+  "scheduleScreenSaveConfirmMessage": "Your task has been saved and reminders set.",
+
+  "scheduleTaskNameLabel": "Task name",
+  "scheduleTaskNamePlaceholder": "What do you want to be reminded about?",
+  "scheduleTaskNameMaxLengthError": "Task name must be under 60 characters",
+
+  "scheduleCustomTitleLabel": "Custom title (optional)",
+  "scheduleCustomTitlePlaceholder": "e.g. Blood Pressure Tablet, Ford MOT",
+  "scheduleCustomTitleHint": "Give this task a personal name to show in notifications",
+
+  "scheduleRepeatLabel": "Repeat",
+  "scheduleRepeatNever": "Never",
+  "scheduleRepeatDaily": "Daily",
+  "scheduleRepeatWeekly": "Weekly",
+  "scheduleRepeatBiweekly": "Every 2 weeks",
+  "scheduleRepeatMonthly": "Monthly",
+  "scheduleRepeatQuarterly": "Quarterly",
+  "scheduleRepeatYearly": "Yearly",
+
+  "scheduleTimeLabel": "Time",
+  "scheduleAddTimeLabel": "Add time",
+  "scheduleRemoveTimeLabel": "Remove",
+  "scheduleDoseTimeLabel": "Dose {n}",
+  "@scheduleDoseTimeLabel": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "scheduleAddDoseLabel": "Add another dose time",
+  "scheduleRemoveDoseLabel": "Remove dose",
+
+  "scheduleDayLabel": "Day",
+  "scheduleDaysLabel": "Days",
+  "scheduleSameTimeAllDaysToggle": "Same time for all days",
+
+  "scheduleDateLabel": "Date",
+  "scheduleDatePickerTitle": "Select date",
+  "scheduleDatePickerSingleHint": "Choose one date per year",
+  "scheduleDatePickerMultiHint": "Choose up to {max} dates",
+  "@scheduleDatePickerMultiHint": {
+    "placeholders": { "max": { "type": "int" } }
+  },
+
+  "scheduleMonthlyFirstDay": "First day",
+  "scheduleMonthlyLastDay": "Last day",
+  "scheduleMonthlySpecificDate": "Specific date",
+  "scheduleMonthlyShortMonthFallbackLastDay": "Use last day",
+  "scheduleMonthlyShortMonthFallbackSkip": "Skip month",
+
+  "scheduleLocationLabel": "Location",
+  "scheduleLocationWholeHome": "Whole home",
+  "scheduleLocationNoSelection": "No location",
+
+  "locationLivingRoom": "Living Room",
+  "locationBedroom": "Bedroom",
+  "locationSecondBedroom": "Second Bedroom",
+  "locationThirdBedroom": "Third Bedroom",
+  "locationBathroom": "Bathroom",
+  "locationEnsuite": "En-suite",
+  "locationKitchen": "Kitchen",
+  "locationDiningRoom": "Dining Room",
+  "locationHallway": "Hallway",
+  "locationLanding": "Landing",
+  "locationStairs": "Stairs",
+  "locationHomeOffice": "Home Office",
+  "locationUtilityRoom": "Utility Room",
+  "locationConservatory": "Conservatory",
+  "locationGarage": "Garage",
+  "locationGarden": "Garden",
+  "locationShed": "Shed",
+  "locationDriveway": "Driveway",
+  "locationLoft": "Loft",
+  "locationCellar": "Cellar",
+  "locationPorch": "Porch",
+  "locationWholeHome": "Whole home",
+  "locationAddCustom": "+ Add a location",
+  "locationCustomPlaceholder": "e.g. Sunroom, Workshop, Pool House",
+
+  "scheduleReminderLabel": "Remind me",
+  "scheduleReminderNone": "No reminder",
+  "reminder2m": "2 min before",
+  "reminder5m": "5 min before",
+  "reminder10m": "10 min before",
+  "reminder15m": "15 min before",
+  "reminder30m": "30 min before",
+  "reminder1h": "1 hour before",
+  "reminder1day": "1 day before",
+  "reminder1week": "1 week before",
+  "reminder1month": "1 month before",
+
+  "scheduleNotificationChannelsLabel": "Notify via",
+  "scheduleChannelApp": "App",
+  "scheduleChannelAlarm": "Alarm",
+  "scheduleChannelEmail": "Email",
+  "scheduleChannelWhatsApp": "WhatsApp",
+  "scheduleChannelWhatsAppRequiresSetup": "WhatsApp setup required",
+  "scheduleChannelEmailRequiresSetup": "Email setup required",
+
+  "scheduleAlarmLabel": "Alarm",
+  "scheduleAlarmToggle": "Set alarm",
+  "scheduleAlarmIOSNotSupported": "Alarms are not supported on iOS. A standard notification will be used instead.",
+
+  "scheduleSummaryLabel": "Summary",
+  "scheduleSummaryRepeatDaily": "Every day at {time}",
+  "@scheduleSummaryRepeatDaily": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "scheduleSummaryRepeatDailyMultiTime": "Every day at {times}",
+  "@scheduleSummaryRepeatDailyMultiTime": {
+    "placeholders": { "times": { "type": "String" } }
+  },
+  "scheduleSummaryRepeatWeekly": "Every {day} at {time}",
+  "@scheduleSummaryRepeatWeekly": {
+    "placeholders": {
+      "day": { "type": "String" },
+      "time": { "type": "String" }
+    }
+  },
+  "scheduleSummaryRepeatYearly": "Every year on {date} at {time}",
+  "@scheduleSummaryRepeatYearly": {
+    "placeholders": {
+      "date": { "type": "String" },
+      "time": { "type": "String" }
+    }
+  },
+  "scheduleSummaryReminder": "Reminder {reminder} before",
+  "@scheduleSummaryReminder": {
+    "placeholders": { "reminder": { "type": "String" } }
+  },
+  "scheduleSummaryNoReminder": "No reminder set",
+  "scheduleSummaryLocation": "Location: {location}",
+  "@scheduleSummaryLocation": {
+    "placeholders": { "location": { "type": "String" } }
+  },
+
+  "taskVehicleMotName": "Car MOT",
+  "taskVehicleMotShortName": "MOT",
+  "taskVehicleMotDescription": "Keep on top of your MOT so you're never caught out.",
+  "taskVehicleMotNotificationMessage": "Your MOT is due soon. Book it before it expires!",
+  "taskVehicleMotCustomTitleHint": "e.g. Ford MOT, Honda MOT",
+
+  "taskVehicleRoadTaxName": "Road Tax",
+  "taskVehicleRoadTaxShortName": "Road Tax",
+  "taskVehicleRoadTaxDescription": "Never forget to renew your road tax.",
+  "taskVehicleRoadTaxNotificationMessage": "Your road tax is due soon. Renew at gov.uk/vehicle-tax.",
+
+  "taskHealthMedicationName": "Medication",
+  "taskHealthMedicationShortName": "Medication",
+  "taskHealthMedicationDescription": "Never miss a dose. Set your medication times and we'll remind you every day.",
+  "taskHealthMedicationNotificationMessage": "Time to take your medication 💊",
+  "taskHealthMedicationAddDoseLabel": "Add another dose time",
+  "taskHealthMedicationRemoveDoseLabel": "Remove dose",
+  "taskHealthMedicationDoseTimeLabel": "Dose {n}",
+  "@taskHealthMedicationDoseTimeLabel": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "taskHealthMedicationCustomTitleHint": "e.g. Vitamin D, Blood Pressure Tablet, Metformin",
+
+  "taskHomeCleaningHooveringName": "Hoovering",
+  "taskHomeCleaningHooveringShortName": "Hoovering",
+  "taskHomeCleaningHooveringDescription": "Keep on top of the hoovering room by room.",
+  "taskHomeCleaningHooveringNotificationMessage": "Time to hoover! 🧹",
+  "taskHomeCleaningHooveringNotificationMessageWithLocation": "Time to hoover the {location} 🧹",
+  "@taskHomeCleaningHooveringNotificationMessageWithLocation": {
+    "placeholders": { "location": { "type": "String" } }
+  },
+  "taskHomeCleaningHooveringCustomTitleHint": "e.g. Downstairs Hoover, Living Room Hoover",
+
+  "taskBinCollectionBinOutName": "Bin Out",
+  "taskBinCollectionBinOutShortName": "Bin Out",
+  "taskBinCollectionBinOutDescription": "Put the bin out the night before collection so you never miss it.",
+  "taskBinCollectionBinOutNotificationMessage": "Don't forget to put the bin out tonight! 🗑️",
+  "taskBinCollectionBinInName": "Bin In",
+  "taskBinCollectionBinInShortName": "Bin In",
+  "taskBinCollectionBinInDescription": "Bring the bin back in after collection.",
+  "taskBinCollectionBinInNotificationMessage": "Time to bring the bin back in! 🗑️",
+
+  "customTaskNamePlaceholder": "What do you want to be reminded about?",
+  "customTaskCategoryLabel": "My Tasks",
+
+  "smartConfirmScreenTitle": "Suggested Tasks",
+  "smartConfirmScreenSubtitle": "We found the following based on your information. Accept or dismiss each one.",
+  "smartConfirmAcceptAll": "Accept all",
+  "smartConfirmAccept": "Accept",
+  "smartConfirmDismiss": "Dismiss",
+
+  "weekdayMonday": "Monday",
+  "weekdayTuesday": "Tuesday",
+  "weekdayWednesday": "Wednesday",
+  "weekdayThursday": "Thursday",
+  "weekdayFriday": "Friday",
+  "weekdaySaturday": "Saturday",
+  "weekdaySunday": "Sunday",
+  "weekdayMondayShort": "Mon",
+  "weekdayTuesdayShort": "Tue",
+  "weekdayWednesdayShort": "Wed",
+  "weekdayThursdayShort": "Thu",
+  "weekdayFridayShort": "Fri",
+  "weekdaySaturdayShort": "Sat",
+  "weekdaySundayShort": "Sun",
+
+  "binTypeGeneralWaste": "General Waste",
+  "binTypeRecycling": "Recycling",
+  "binTypeGardenWaste": "Garden Waste",
+  "binTypeFoodWaste": "Food Waste",
+  "binTypeGlass": "Glass"
+}

@@ -1,175 +1,154 @@
-import 'package:isar/isar.dart';
+import 'dart:convert';
 
-part 'user_preferences.g.dart';
-part 'task_log.g.dart';
+import '../app_database.dart';
 
-// ── UserPreferences ───────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// UserPreferences — domain model wrapping UserPreferencesTableData
+// ─────────────────────────────────────────────────────────────────────────────
 
-/// Stores all user preferences — the top level of the config resolution hierarchy.
-///
-/// This is a singleton collection (id = 1 always).
-/// Fields map to user_preferences.* keys in the config registry.
-@collection
 class UserPreferences {
-  Id id = 1; // Singleton
+  UserPreferences({
+    this.wakeTime = '07:00',
+    this.sleepTime = '22:30',
+    this.jobStartTime = '09:00',
+    this.jobEndTime = '17:30',
+    this.weekendWakeTime = '08:30',
+    this.daysOff = const [6, 7],
+    this.homeTimezone = 'Europe/London',
+    this.homeLocationKeys = const [],
+    this.customLocationNames = const [],
+    this.householdAgeGroups = const [],
+    this.vehiclesJson = '[]',
+    this.petsJson = '[]',
+    this.themeId = 'midnight_focus',
+    this.languageCode = 'en',
+    this.textScaleFactor = 1.0,
+    this.notificationsEnabled = true,
+    this.setupWizardCompleted = false,
+    this.onboardingCompleted = false,
+    this.postcode,
+    this.locationLatitude,
+    this.locationLongitude,
+    this.whatsAppNumber,
+    this.whatsAppEnabled = false,
+    this.emailAddress,
+    this.emailEnabled = false,
+  });
 
-  // ── Daily timings ──────────────────────────────────────────────────────────
-  String wakeUpTime           = '07:00';
-  String sleepTime            = '22:30';
-  String jobStartTime         = '09:00';
-  String jobEndTime           = '17:30';
-  String weekendWakeUpTime    = '08:30';
-  String weekendSleepTime     = '23:30';
-  List<String> daysOff        = ['saturday', 'sunday'];
-
-  // ── Timezone ───────────────────────────────────────────────────────────────
-  String homeTimezone         = 'Europe/London';
-  String systemTimezone       = 'Europe/London';
-
-  // ── Locations ─────────────────────────────────────────────────────────────
-  /// Location i18n keys confirmed in setup wizard Q3.
-  List<String> homeLocations  = [];
-
-  /// User-created custom location strings.
-  List<String> customLocations = [];
-
-  // ── Reminders ─────────────────────────────────────────────────────────────
-  /// User's preferred reminder offsets in minutes.
-  List<int> preferredReminderMinutes = [30];
-
-  // ── Notification preferences ───────────────────────────────────────────────
-  bool notifyMorningSummary    = true;
-  bool notifyEveningSummary    = true;
-  bool notifyWeatherSummary    = true;
-  bool notifyMissedTasks       = true;
-  bool notifyPointMilestone    = true;
-
-  // ── Notification channels ──────────────────────────────────────────────────
-  bool defaultNotifyViaApp      = true;
-  bool defaultNotifyViaAlarm    = false;
-  bool defaultNotifyViaEmail    = false;
-  bool defaultNotifyViaWhatsapp = false;
-  String? whatsappNumber;
-
-  // ── Vehicles ───────────────────────────────────────────────────────────────
-  /// JSON-encoded list of vehicle objects.
-  /// [{type, count, regPlates: [], dvlaFetched: bool}]
-  String vehiclesJson = '[]';
-
-  // ── Pets ───────────────────────────────────────────────────────────────────
-  /// JSON-encoded list of pet objects.
-  /// [{typeId, names: [], categoryIdsUnlocked: []}]
-  String petsJson = '[]';
-
-  // ── Household ─────────────────────────────────────────────────────────────
-  List<String> householdAgeGroups = [];
-
-  // ── Location & postcode ────────────────────────────────────────────────────
-  bool locationPermissionGranted = false;
-  double? locationLat;
-  double? locationLng;
+  String wakeTime;
+  String sleepTime;
+  String jobStartTime;
+  String jobEndTime;
+  String weekendWakeTime;
+  List<int> daysOff;
+  String homeTimezone;
+  List<String> homeLocationKeys;
+  List<String> customLocationNames;
+  List<String> householdAgeGroups;
+  String vehiclesJson;
+  String petsJson;
+  String themeId;
+  String languageCode;
+  double textScaleFactor;
+  bool notificationsEnabled;
+  bool setupWizardCompleted;
+  bool onboardingCompleted;
   String? postcode;
+  double? locationLatitude;
+  double? locationLongitude;
+  String? whatsAppNumber;
+  bool whatsAppEnabled;
+  String? emailAddress;
+  bool emailEnabled;
 
-  // ── UI preferences ────────────────────────────────────────────────────────
-  String activeTheme    = 'midnight_focus';
-  String activeLanguage = 'en';
-  String textSize       = 'medium'; // small | medium | large
-  bool   darkMode       = true;
+  // ── Computed helpers ──────────────────────────────────────────────────────
 
-  // ── Points ────────────────────────────────────────────────────────────────
-  String milestoneWeekday = 'sunday';
+  bool get hasAnyHomeLocations => homeLocationKeys.isNotEmpty;
 
-  // ── Setup wizard ──────────────────────────────────────────────────────────
-  bool setupCompleted = false;
+  List<String> get allLocationKeys => [
+    ...homeLocationKeys,
+    ...customLocationNames.map((n) => 'custom.$n'),
+  ];
 
-  // ── Subscription ──────────────────────────────────────────────────────────
-  String subscriptionTier = 'guest'; // guest | free | premium
-  DateTime? subscriptionExpiry;
+  // ── Conversion ────────────────────────────────────────────────────────────
 
-  // ── Auth ──────────────────────────────────────────────────────────────────
-  String? email;
-  String? authProvider; // magic_link | google | apple
+  factory UserPreferences.fromRow(UserPreferencesTableData row) {
+    return UserPreferences(
+      wakeTime: row.wakeTime,
+      sleepTime: row.sleepTime,
+      jobStartTime: row.jobStartTime,
+      jobEndTime: row.jobEndTime,
+      weekendWakeTime: row.weekendWakeTime,
+      daysOff: _decodeIntList(row.daysOffJson),
+      homeTimezone: row.homeTimezone,
+      homeLocationKeys: _decodeStringList(row.homeLocationKeysJson),
+      customLocationNames: _decodeStringList(row.customLocationNamesJson),
+      householdAgeGroups: _decodeStringList(row.householdAgeGroupsJson),
+      vehiclesJson: row.vehiclesJson,
+      petsJson: row.petsJson,
+      themeId: row.themeId,
+      languageCode: row.languageCode,
+      textScaleFactor: row.textScaleFactor,
+      notificationsEnabled: row.notificationsEnabled,
+      setupWizardCompleted: row.setupWizardCompleted,
+      onboardingCompleted: row.onboardingCompleted,
+      postcode: row.postcode,
+      locationLatitude: row.locationLatitude,
+      locationLongitude: row.locationLongitude,
+      whatsAppNumber: row.whatsAppNumber,
+      whatsAppEnabled: row.whatsAppEnabled,
+      emailAddress: row.emailAddress,
+      emailEnabled: row.emailEnabled,
+    );
+  }
 
-  // ── Cached visible category IDs ───────────────────────────────────────────
-  /// Computed by CategoryVisibilityService from pet + age group selections.
-  List<String> visibleCategoryIds = [];
-}
+  UserPreferencesTableCompanion toCompanion() {
+    final now = DateTime.now();
+    return UserPreferencesTableCompanion(
+      id: const Value(1),
+      wakeTime: Value(wakeTime),
+      sleepTime: Value(sleepTime),
+      jobStartTime: Value(jobStartTime),
+      jobEndTime: Value(jobEndTime),
+      weekendWakeTime: Value(weekendWakeTime),
+      daysOffJson: Value(json.encode(daysOff)),
+      homeTimezone: Value(homeTimezone),
+      homeLocationKeysJson: Value(json.encode(homeLocationKeys)),
+      customLocationNamesJson: Value(json.encode(customLocationNames)),
+      householdAgeGroupsJson: Value(json.encode(householdAgeGroups)),
+      vehiclesJson: Value(vehiclesJson),
+      petsJson: Value(petsJson),
+      themeId: Value(themeId),
+      languageCode: Value(languageCode),
+      textScaleFactor: Value(textScaleFactor),
+      notificationsEnabled: Value(notificationsEnabled),
+      setupWizardCompleted: Value(setupWizardCompleted),
+      onboardingCompleted: Value(onboardingCompleted),
+      postcode: Value(postcode),
+      locationLatitude: Value(locationLatitude),
+      locationLongitude: Value(locationLongitude),
+      whatsAppNumber: Value(whatsAppNumber),
+      whatsAppEnabled: Value(whatsAppEnabled),
+      emailAddress: Value(emailAddress),
+      emailEnabled: Value(emailEnabled),
+      createdAt: Value(now),
+      updatedAt: Value(now),
+    );
+  }
 
-// ── TaskLog ───────────────────────────────────────────────────────────────────
+  static List<String> _decodeStringList(String raw) {
+    try {
+      return (jsonDecode(raw) as List).cast<String>();
+    } catch (_) {
+      return [];
+    }
+  }
 
-/// Records every task completion, miss, skip, and snooze event.
-///
-/// Append-only — never update existing records.
-/// Used for: dashboard display, task history screen, points calculation,
-/// morning/evening summary notifications.
-@collection
-class TaskLog {
-  Id id = Isar.autoIncrement;
-
-  @Index()
-  late int savedTaskId;
-
-  /// The task name at the time of the event (snapshot — task may be renamed).
-  late String taskName;
-
-  /// Category ID at time of event.
-  late String categoryId;
-
-  /// Event type: completed | missed | skipped | snoozed | rescheduled | unticked
-  @Index()
-  late String eventType;
-
-  /// The originally scheduled time for this task occurrence (ISO 8601).
-  late DateTime scheduledAt;
-
-  /// The time the event was recorded (e.g. when user tapped Complete).
-  @Index()
-  late DateTime eventAt;
-
-  /// Points awarded for this event. 0 for miss/skip/snooze.
-  int pointsAwarded = 0;
-
-  /// For snooze events: the new scheduled time.
-  DateTime? snoozedUntil;
-
-  /// For reschedule events: the new scheduled time.
-  DateTime? rescheduledTo;
-
-  /// Original scheduled time saved before a reschedule.
-  DateTime? originalScheduledAt;
-
-  /// Which time slot this log entry is for (index into scheduledTimes array).
-  /// Relevant for multi-time tasks like medication.
-  /// -1 = not applicable (single-time task).
-  int timeSlotIndex = -1;
-}
-
-// ── PointsTransaction ─────────────────────────────────────────────────────────
-
-part 'points_transaction.g.dart';
-
-/// Immutable audit log for the points system.
-///
-/// Balance = SUM(points) across all records for this user.
-/// NEVER update existing records — only append.
-@collection
-class PointsTransaction {
-  Id id = Isar.autoIncrement;
-
-  @Index()
-  late int savedTaskId;
-
-  late String taskName;
-
-  /// Points value — positive for earn, negative for deduct.
-  late int points;
-
-  /// 'earn' or 'deduct'.
-  late String action;
-
-  @Index()
-  late DateTime timestamp;
-
-  /// Optional notes e.g. 'untick_within_window'.
-  String? notes;
+  static List<int> _decodeIntList(String raw) {
+    try {
+      return (jsonDecode(raw) as List).cast<int>();
+    } catch (_) {
+      return [];
+    }
+  }
 }
