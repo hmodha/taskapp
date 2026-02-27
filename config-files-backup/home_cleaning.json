@@ -1,0 +1,130 @@
+{
+  "_metadata": {
+    "_comment": "categories/home_cleaning.json — Home cleaning category tasks.",
+    "_comment_2": "Category ID: home_cleaning. Registered in category-registry.json.",
+    "_comment_3": "Contains: Hoovering — a location-aware task showing room-by-room scheduling.",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "product"
+  },
+
+  "id": "home_cleaning",
+  "label_key": "category.home_cleaning.label",
+  "description_key": "category.home_cleaning.description",
+  "icon": "cleaning_services",
+  "color_hex": "#2E7D32",
+  "_comment_color": "OPTIONAL.",
+  "sort_order": 3,
+  "enabled": true,
+  "default_hidden": false,
+  "unlock_condition": null,
+  "age_group_filter": [],
+  "location_filter": [],
+
+  "tasks": [
+
+    {
+      "id": "home_cleaning.hoovering",
+      "name_key": "task.home_cleaning.hoovering.name",
+      "short_name_key": "task.home_cleaning.hoovering.short_name",
+      "description_key": "task.home_cleaning.hoovering.description",
+      "_comment_description_example": "Keep on top of the hoovering room by room.",
+      "icon": "cleaning_services",
+      "enabled": true,
+      "sort_order": 1,
+      "source": "manual",
+
+      "locations": {
+        "_comment": "LOCATION-AWARE TASK — user selects which room this schedule applies to.",
+        "_comment_2": "Location options are sourced centrally from ui-global-config.json location.default_locations_keys.",
+        "_comment_3": "Shown options are intersected with user's confirmed home locations from preferences.",
+        "_comment_4": "Task config files do NOT define their own location arrays — all locations are in ui-global-config.json.",
+        "_comment_5": "User can create separate task entries per room at different frequencies.",
+        "enabled": true,
+        "options_source": "ui-global-config.location.default_locations_keys",
+        "_comment_source": "Pull the full central location list. Intersection with user home locations applied at runtime.",
+        "multi_select": false,
+        "_comment_multi": "One location per task instance. Create separate tasks for different room schedules.",
+        "required": false,
+        "_comment_required": "false = user can save without picking a room — defaults to whole_home label.",
+        "no_location_label_key": "location.whole_home"
+      },
+
+      "allowed_repeats": {
+        "_comment": "Hoovering frequency varies by room — all common options available.",
+        "options": ["daily", "weekly", "biweekly", "monthly"]
+      },
+
+      "multiple_times_per_day": null,
+      "_comment_multiple": "Not applicable for hoovering.",
+
+      "default_repeat": "weekly",
+      "_comment_default": "Weekly is the most common hoovering frequency.",
+
+      "default_time": "10:00",
+      "_comment_default_time": "Morning slot — most people prefer to hoover in the morning.",
+
+      "default_days": ["saturday"],
+      "_comment_default_days": "Saturday pre-selected — most common household cleaning day in UK.",
+
+      "reminder_options": {
+        "options_minutes": [10, 30, 60],
+        "labels_keys": {
+          "10": "reminder.10m",
+          "30": "reminder.30m",
+          "60": "reminder.1h"
+        },
+        "default_selected_minutes": [30]
+      },
+
+      "notification": {
+        "custom_message_key": "task.home_cleaning.hoovering.notification_message",
+        "_comment_example_no_location": "Time to hoover! 🧹",
+        "_comment_example_with_location": "Time to hoover the {location} 🧹",
+        "_comment_location_in_message": "If user selected a location, it is substituted into the notification using {location} placeholder.",
+        "location_placeholder": "{location}",
+        "_comment_placeholder": "Runtime resolver substitutes the user's selected location into this template.",
+        "channels": {
+          "app": true,
+          "alarm": false,
+          "email": false,
+          "whatsapp": false
+        }
+      },
+
+      "alarm": {
+        "enabled_by_default": false
+      },
+
+      "summary": {
+        "enabled": true
+      },
+
+      "points": {
+        "per_completion": 1
+      },
+
+      "custom_title": {
+        "_comment": "Custom title makes multi-room schedules easy to distinguish on dashboard.",
+        "encouraged": true,
+        "encouraged_hint_key": "task.home_cleaning.hoovering.custom_title_hint",
+        "_comment_hint_example": "e.g. 'Give this a name e.g. Downstairs Hoover, Living Room Hoover'"
+      },
+
+      "dashboard_display": {
+        "_comment": "How this task appears on dashboard when a location is selected.",
+        "show_location_in_row": true,
+        "_comment_show_location": "If location is set, show it as a small label beneath the task name on the dashboard row.",
+        "_comment_example": "Task row: 'Hoovering' with sub-label 'Living Room'"
+      },
+
+      "tags": ["cleaning", "home", "hoovering", "weekly", "location-aware"],
+
+      "metadata": {
+        "created_at_version": "1.0.0",
+        "notes": "Location-aware task. User can create multiple entries for different rooms at different frequencies. location.stairs is a task-specific location option added here beyond the global defaults."
+      }
+    }
+
+  ]
+}

@@ -165,6 +165,11 @@
       "_comment": "Account screen sections and visibility."
     },
 
+    "custom_task.*": {
+      "file": "ui-global-config.json",
+      "_comment": "Custom task creation rules, schedule screen settings, and Isar storage fields."
+    },
+
     "location.*": {
       "file": "ui-global-config.json",
       "_comment": "Default location list and custom location settings."

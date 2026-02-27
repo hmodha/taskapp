@@ -1,0 +1,204 @@
+{
+  "_metadata": {
+    "_comment": "categories/vehicle.json — Vehicle category tasks.",
+    "_comment_2": "Category ID: vehicle. Registered in category-registry.json.",
+    "_comment_3": "Contains: Car MOT reminder, Road Tax reminder.",
+    "_comment_4": "MOT and Road Tax tasks are created via DVLA API lookup — source: dvla_api.",
+    "_comment_5": "Both tasks enforce once-a-year scheduling — max_date_selections: 1 on yearly repeat.",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "product"
+  },
+
+  "id": "vehicle",
+  "label_key": "category.vehicle.label",
+  "description_key": "category.vehicle.description",
+  "icon": "directions_car",
+  "color_hex": "#1565C0",
+  "_comment_color": "OPTIONAL. If omitted, category inherits color from category-registry.json entry.",
+  "sort_order": 1,
+  "enabled": true,
+  "default_hidden": false,
+  "unlock_condition": null,
+  "age_group_filter": [],
+  "location_filter": [],
+
+  "tasks": [
+
+    {
+      "id": "vehicle.car_mot",
+      "name_key": "task.vehicle.car_mot.name",
+      "short_name_key": "task.vehicle.car_mot.short_name",
+      "description_key": "task.vehicle.car_mot.description",
+      "_comment_description_example": "Keep on top of your MOT so you're never caught out.",
+      "icon": "build_circle",
+      "enabled": true,
+      "sort_order": 1,
+      "source": "dvla_api",
+      "_comment_source": "This task is typically created by DVLA API lookup. Can also be created manually.",
+
+      "locations": null,
+      "_comment_locations": "null = location section hidden on schedule screen. MOT is not location-specific.",
+
+      "allowed_repeats": {
+        "_comment": "MOT is annual — only yearly repeat is permitted.",
+        "options": ["yearly"]
+      },
+
+      "yearly_config": {
+        "_comment": "Overrides the global yearly repeat settings for this task.",
+        "max_date_selections": 1,
+        "_comment_max": "ONCE A YEAR ONLY. Overrides schedule-global-config.json yearly.max_date_selections (which is 2).",
+        "_comment_max_2": "When user selects yearly repeat for this task, they can only pick ONE date. The multi-date calendar UI is replaced by a single date picker.",
+        "single_date_picker": true,
+        "_comment_single": "true = show a single date picker instead of the multi-select calendar UI.",
+        "show_time_picker": true
+      },
+
+      "multiple_times_per_day": null,
+      "_comment_multiple": "null = multiple times not applicable for MOT. Single annual reminder only.",
+
+      "default_repeat": "yearly",
+      "_comment_default_repeat": "Pre-selected repeat when user opens schedule screen.",
+
+      "default_time": "09:00",
+
+      "reminder_options": {
+        "_comment": "MOT reminders should be further in advance than typical tasks.",
+        "options_minutes": [1440, 10080, 43200],
+        "_comment_options": "1 day (1440m), 1 week (10080m), 1 month (43200m).",
+        "labels_keys": {
+          "1440": "reminder.1day",
+          "10080": "reminder.1week",
+          "43200": "reminder.1month"
+        },
+        "default_selected_minutes": [43200, 10080],
+        "_comment_default": "Pre-select 1 month AND 1 week reminders — MOT needs advance notice."
+      },
+
+      "notification": {
+        "custom_message_key": "task.vehicle.car_mot.notification_message",
+        "_comment_example": "Your {vehicle_make} MOT is due on {task_date}. Book it soon!",
+        "channels": {
+          "app": true,
+          "alarm": false,
+          "email": true,
+          "_comment_email": "Email default on for MOT — important legal requirement.",
+          "whatsapp": false
+        }
+      },
+
+      "alarm": {
+        "enabled_by_default": false
+      },
+
+      "summary": {
+        "enabled": true
+      },
+
+      "points": {
+        "per_completion": 1
+      },
+
+      "api_source": {
+        "api_type": "dvla",
+        "prepopulate_schedule_screen": true,
+        "_comment_prepopulate": "DVLA response (motExpiryDate) pre-fills the date field on schedule screen.",
+        "prepopulated_fields": {
+          "date": "dvla_response.motExpiryDate",
+          "custom_title_template": "{vehicle_make} ({vehicle_reg})",
+          "_comment_title": "e.g. 'Ford (AB12 CDE)' — auto-set as custom task title from DVLA data."
+        },
+        "user_can_modify": true
+      },
+
+      "tags": ["vehicle", "mot", "legal", "annual", "dvla"],
+
+      "metadata": {
+        "created_at_version": "1.0.0",
+        "notes": "MOT is a legal requirement in the UK for vehicles over 3 years old. Annual only. DVLA API populates date."
+      }
+    },
+
+    {
+      "id": "vehicle.road_tax",
+      "name_key": "task.vehicle.road_tax.name",
+      "short_name_key": "task.vehicle.road_tax.short_name",
+      "description_key": "task.vehicle.road_tax.description",
+      "_comment_description_example": "Never forget to renew your road tax.",
+      "icon": "receipt_long",
+      "enabled": true,
+      "sort_order": 2,
+      "source": "dvla_api",
+
+      "locations": null,
+
+      "allowed_repeats": {
+        "options": ["yearly"]
+      },
+
+      "yearly_config": {
+        "max_date_selections": 1,
+        "_comment_max": "ONCE A YEAR ONLY. Road tax renews once per year on a fixed date.",
+        "single_date_picker": true,
+        "show_time_picker": true
+      },
+
+      "multiple_times_per_day": null,
+
+      "default_repeat": "yearly",
+      "default_time": "09:00",
+
+      "reminder_options": {
+        "options_minutes": [1440, 10080, 43200],
+        "labels_keys": {
+          "1440": "reminder.1day",
+          "10080": "reminder.1week",
+          "43200": "reminder.1month"
+        },
+        "default_selected_minutes": [43200, 10080]
+      },
+
+      "notification": {
+        "custom_message_key": "task.vehicle.road_tax.notification_message",
+        "_comment_example": "Your {vehicle_make} road tax is due on {task_date}. Renew at gov.uk/vehicle-tax.",
+        "channels": {
+          "app": true,
+          "alarm": false,
+          "email": true,
+          "whatsapp": false
+        }
+      },
+
+      "alarm": {
+        "enabled_by_default": false
+      },
+
+      "summary": {
+        "enabled": true
+      },
+
+      "points": {
+        "per_completion": 1
+      },
+
+      "api_source": {
+        "api_type": "dvla",
+        "prepopulate_schedule_screen": true,
+        "prepopulated_fields": {
+          "date": "dvla_response.taxDueDate",
+          "custom_title_template": "{vehicle_make} Tax ({vehicle_reg})"
+        },
+        "user_can_modify": true
+      },
+
+      "tags": ["vehicle", "tax", "legal", "annual", "dvla"],
+
+      "metadata": {
+        "created_at_version": "1.0.0",
+        "notes": "Road tax renews annually. DVLA API populates the due date. Legal requirement."
+      }
+    }
+
+  ]
+}

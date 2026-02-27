@@ -177,38 +177,131 @@
   },
 
   "location": {
-    "_comment": "Default location options for setup wizard Q3 and user preferences screen.",
-    "_comment_2": "Values are i18n keys — never raw strings.",
+    "_comment": "SINGLE SOURCE OF TRUTH for all locations across the entire app.",
+    "_comment_2": "Used in: setup wizard Q3, user preferences, schedule screen location picker.",
+    "_comment_3": "Category and task config files reference this list — they do NOT define their own location arrays.",
+    "_comment_4": "Locations shown on schedule screen = intersection of this list AND user's confirmed home locations.",
+    "_comment_5": "Custom locations added by user are stored in user_preferences.custom_locations and merged at runtime.",
+    "_comment_6": "Values are i18n keys — never raw strings. Custom locations stored as raw user strings.",
 
     "default_locations_keys": [
       "location.living_room",
       "location.bedroom",
-      "location.kitchen",
+      "location.second_bedroom",
+      "location.third_bedroom",
       "location.bathroom",
+      "location.ensuite",
+      "location.kitchen",
+      "location.dining_room",
       "location.hallway",
+      "location.landing",
+      "location.stairs",
+      "location.home_office",
+      "location.utility_room",
+      "location.conservatory",
       "location.garage",
       "location.garden",
-      "location.loft",
-      "location.utility_room",
-      "location.dining_room",
-      "location.home_office",
-      "location.conservatory",
       "location.shed",
-      "location.driveway"
+      "location.driveway",
+      "location.loft",
+      "location.cellar",
+      "location.porch",
+      "location.whole_home"
     ],
+    "_comment_whole_home": "location.whole_home is the fallback label used when a location-aware task is saved without selecting a room.",
+    "_comment_stairs": "location.stairs included here — was previously only in individual task files. Centralised now.",
 
     "allow_custom_locations": true,
-    "_comment_custom": "User can type and add custom locations not in the default list.",
-    "custom_location_add_label_key": "location.add_custom",
-    "custom_location_placeholder_key": "location.custom_placeholder",
 
-    "backend_sync_custom_locations": true,
-    "_comment_sync": "Custom locations pushed to backend for product team review — improves defaults for all users.",
-    "backend_sync_method": "stub",
-    "_comment_stub": "Backend not yet built. Use empty stub method. Will be wired up when backend is ready.",
+    "custom_location": {
+      "_comment": "User-created locations added in setup wizard Q3 or preferences screen.",
+      "add_label_key": "location.add_custom",
+      "input_placeholder_key": "location.custom_placeholder",
+      "_comment_placeholder_example": "e.g. 'Sunroom', 'Workshop', 'Pool House'",
+      "max_per_user": 20,
+      "max_name_length": 40,
+      "storage_key": "user_preferences.custom_locations",
+      "_comment_storage": "Stored as array of raw strings e.g. ['Sunroom', 'Workshop']. Merged with default_locations_keys at runtime.",
+      "backend_sync": {
+        "enabled": true,
+        "method": "stub",
+        "stub_method": "LocationSyncService.submitCustomLocation(location)",
+        "_comment_stub": "Backend not yet built. Empty async stub. Wire up when backend is ready."
+      }
+    },
 
-    "location_intersection_with_task_config": true,
-    "_comment_intersection": "On schedule screen, only show locations present in BOTH task config AND user's home setup."
+    "location_intersection_with_user_home": true,
+    "_comment_intersection": "On schedule screen, only show locations the user confirmed they have in setup wizard Q3 or preferences.",
+
+    "no_location_label_key": "location.whole_home",
+    "_comment_no_location": "Shown in task rows and notifications when no specific room is selected for a task."
+  },
+
+  "custom_task": {
+    "_comment": "Configuration for user-created custom tasks — tasks not in any category config file.",
+    "_comment_2": "Custom tasks appear alongside standard tasks on the dashboard and in task history.",
+    "_comment_3": "Custom tasks have the same schedule screen as standard tasks — all fields available.",
+    "_comment_4": "Custom tasks are stored in Isar with source: 'manual' and category_id: 'custom'.",
+
+    "enabled": true,
+    "entry_points": [
+      "category_screen_fab",
+      "task_screen_bottom",
+      "dashboard_fab"
+    ],
+    "_comment_entry_points": "Where in the app a user can initiate creating a custom task.",
+
+    "category_id": "custom",
+    "_comment_category": "Custom tasks are grouped under this virtual category ID in Isar. Not a real category file.",
+
+    "category_label_key": "custom_task.category_label",
+    "_comment_category_label": "e.g. 'My Tasks' — section header for custom tasks on the task screen.",
+
+    "schedule_screen": {
+      "_comment": "Custom tasks use the full schedule screen with all fields available.",
+      "show_task_name_input": true,
+      "_comment_name": "For custom tasks, task name is a free-text input — not a pre-filled value from config.",
+      "task_name_placeholder_key": "custom_task.name_placeholder",
+      "_comment_placeholder_example": "e.g. 'What do you want to be reminded about?'",
+      "task_name_max_length": 60,
+
+      "show_custom_title": true,
+      "_comment_custom_title": "Optional second name field — same as for standard tasks.",
+
+      "show_location_picker": true,
+      "_comment_location": "Full location picker available. Options sourced from ui-global-config.json location section.",
+
+      "allowed_repeats": "all",
+      "_comment_repeats": "'all' = all repeat options from schedule-global-config.json shown. No restriction.",
+
+      "show_multiple_times": true,
+      "_comment_times": "Multiple times per day available for custom tasks.",
+      "max_times_per_day": 6,
+
+      "show_reminder_options": true,
+      "show_notification_channels": true,
+      "show_alarm_toggle": true,
+      "show_summary_section": true
+    },
+
+    "isar_fields": {
+      "_comment": "Fields stored in Isar for custom tasks — superset of standard task fields.",
+      "source": "manual",
+      "category_id": "custom",
+      "is_custom": true,
+      "user_defined_name": true
+    },
+
+    "edit_and_delete": {
+      "user_can_edit": true,
+      "user_can_delete": true,
+      "_comment": "Custom tasks can always be edited and deleted by the user."
+    },
+
+    "points": {
+      "per_completion": 1,
+      "_comment": "Custom tasks earn the same points as standard tasks."
+    }
   },
 
   "household": {

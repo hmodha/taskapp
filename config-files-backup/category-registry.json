@@ -1,0 +1,81 @@
+{
+  "_metadata": {
+    "_comment": "category-registry.json — Maps category IDs to their individual config files.",
+    "_comment_2": "The app loads this registry first, then loads individual category files on demand.",
+    "_comment_3": "Categories are loaded lazily — only when the user navigates to that category.",
+    "_comment_4": "Required on startup: only this registry file. Individual category files load on demand.",
+    "_comment_5": "To add a new category: create a new category config file and add an entry here.",
+    "_comment_6": "category_id must be unique and match the 'id' field inside the category config file.",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "product"
+  },
+
+  "load_strategy": "on_demand",
+  "_comment_load": "Options: 'on_demand' | 'eager'. on_demand = load category file only when user taps it. Recommended.",
+
+  "cache_loaded_categories": true,
+  "_comment_cache": "Once a category file is loaded into memory it stays cached for the session. No repeated disk reads.",
+
+  "categories": [
+
+    {
+      "category_id": "vehicle",
+      "file": "categories/vehicle.json",
+      "label_key": "category.vehicle.label",
+      "icon": "directions_car",
+      "color_hex": "#1565C0",
+      "sort_order": 1,
+      "enabled": true,
+      "default_hidden": false,
+      "unlock_condition": null,
+      "_comment": "Vehicle tasks — MOT, road tax, servicing. DVLA API tasks land here."
+    },
+
+    {
+      "category_id": "health",
+      "file": "categories/health.json",
+      "label_key": "category.health.label",
+      "icon": "medication",
+      "color_hex": "#C62828",
+      "sort_order": 2,
+      "enabled": true,
+      "default_hidden": false,
+      "unlock_condition": null,
+      "_comment": "Health tasks — medication, vitamins, GP appointments."
+    },
+
+    {
+      "category_id": "home_cleaning",
+      "file": "categories/home_cleaning.json",
+      "label_key": "category.home_cleaning.label",
+      "icon": "cleaning_services",
+      "color_hex": "#2E7D32",
+      "sort_order": 3,
+      "enabled": true,
+      "default_hidden": false,
+      "unlock_condition": null,
+      "_comment": "Home cleaning tasks — hoovering, laundry, mopping etc."
+    },
+
+    {
+      "category_id": "bin_collection",
+      "file": "categories/bin_collection.json",
+      "label_key": "category.bin_collection.label",
+      "icon": "delete_outline",
+      "color_hex": "#6A1E55",
+      "sort_order": 4,
+      "enabled": true,
+      "default_hidden": false,
+      "unlock_condition": null,
+      "_comment": "Bin tasks — put bin out and bring bin in. Bin collection API tasks land here."
+    }
+
+  ],
+
+  "pet_controlled_categories": [],
+  "_comment_pet": "Categories whose visibility is controlled by pets-config.json. None in this initial set.",
+
+  "hidden_until_unlocked": [],
+  "_comment_hidden": "Category IDs that are default_hidden. Empty for this initial set."
+}

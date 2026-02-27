@@ -1,0 +1,135 @@
+{
+  "_metadata": {
+    "_comment": "categories/health.json — Health category tasks.",
+    "_comment_2": "Category ID: health. Registered in category-registry.json.",
+    "_comment_3": "Contains: Medication — a multi-times-per-day task with configurable daily slots.",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "product"
+  },
+
+  "id": "health",
+  "label_key": "category.health.label",
+  "description_key": "category.health.description",
+  "icon": "medication",
+  "color_hex": "#C62828",
+  "_comment_color": "OPTIONAL.",
+  "sort_order": 2,
+  "enabled": true,
+  "default_hidden": false,
+  "unlock_condition": null,
+  "age_group_filter": [],
+  "location_filter": [],
+
+  "tasks": [
+
+    {
+      "id": "health.medication",
+      "name_key": "task.health.medication.name",
+      "short_name_key": "task.health.medication.short_name",
+      "description_key": "task.health.medication.description",
+      "_comment_description_example": "Never miss a dose. Set your medication times and we'll remind you every day.",
+      "icon": "medication",
+      "enabled": true,
+      "sort_order": 1,
+      "source": "manual",
+
+      "locations": null,
+      "_comment_locations": "Medication is not location-specific — location section hidden.",
+
+      "allowed_repeats": {
+        "_comment": "Medication is typically daily. Weekly and monthly supported for less frequent prescriptions.",
+        "options": ["daily", "weekly", "monthly"]
+      },
+
+      "multiple_times_per_day": {
+        "_comment": "CORE FEATURE for this task — user takes medication multiple times per day.",
+        "enabled": true,
+        "max_times": 6,
+        "_comment_max": "Support up to 6 doses per day — covers most complex medication schedules.",
+        "min_times": 1,
+        "_comment_min": "At least 1 time must be set.",
+        "default_times": ["08:00"],
+        "_comment_default": "One time pre-filled. User adds more with the + button.",
+        "add_time_label_key": "task.health.medication.add_dose_label",
+        "_comment_add_label_example": "e.g. '+ Add another dose time' — more specific than generic 'Add time'.",
+        "remove_time_label_key": "task.health.medication.remove_dose_label",
+        "time_label_key": "task.health.medication.dose_time_label",
+        "_comment_time_label_example": "e.g. 'Dose {n}' — labels each time slot: Dose 1, Dose 2 etc."
+      },
+
+      "default_repeat": "daily",
+      "_comment_default": "Daily is the most common medication schedule — pre-selected.",
+
+      "default_time": "08:00",
+      "_comment_default_time": "Used when daily repeat is selected and multiple_times not yet configured.",
+
+      "reminder_options": {
+        "_comment": "Short reminders for medication — user should take it at the right time.",
+        "options_minutes": [2, 5, 10, 15],
+        "labels_keys": {
+          "2": "reminder.2m",
+          "5": "reminder.5m",
+          "10": "reminder.10m",
+          "15": "reminder.15m"
+        },
+        "default_selected_minutes": [5],
+        "_comment_default": "5 minutes pre-selected — enough time to find medication before the dose time."
+      },
+
+      "notification": {
+        "custom_message_key": "task.health.medication.notification_message",
+        "_comment_example": "Time to take your medication 💊",
+        "_comment_personalisation": "If user sets a custom title (e.g. 'Blood Pressure Tablet'), notification reads: 'Time for Blood Pressure Tablet 💊'",
+        "channels": {
+          "app": true,
+          "alarm": true,
+          "_comment_alarm": "Alarm default ON for medication — missing a dose can have health consequences.",
+          "email": false,
+          "whatsapp": false
+        }
+      },
+
+      "alarm": {
+        "enabled_by_default": true,
+        "_comment": "Alarm on by default for medication. User can disable per task on schedule screen."
+      },
+
+      "summary": {
+        "enabled": true
+      },
+
+      "points": {
+        "per_completion": 1,
+        "_comment": "1 point per dose time completed — each time slot is its own completable item on dashboard."
+      },
+
+      "custom_title": {
+        "_comment": "Medication strongly benefits from a custom title — user should name it e.g. 'Metformin', 'Vitamin D'.",
+        "encouraged": true,
+        "encouraged_hint_key": "task.health.medication.custom_title_hint",
+        "_comment_hint_example": "e.g. 'Give your medication a name e.g. Vitamin D, Blood Pressure Tablet'"
+      },
+
+      "dashboard_display": {
+        "_comment": "How multi-time medication tasks appear on the dashboard.",
+        "today_list": "individual_rows_per_time",
+        "_comment_today": "Each dose time appears as a separate checkable row on today's list.",
+        "_comment_today_2": "e.g. Medication 08:00 ☐, Medication 13:00 ☐, Medication 20:00 ☐",
+        "tomorrow_list": "grouped_single_row",
+        "_comment_tomorrow": "All dose times grouped into one row on tomorrow's list.",
+        "_comment_tomorrow_2": "e.g. Medication — 08:00, 13:00, 20:00",
+        "morning_summary": "grouped_single_row",
+        "_comment_morning": "Grouped in morning/evening summary notifications."
+      },
+
+      "tags": ["health", "medication", "daily", "reminder", "multi-time"],
+
+      "metadata": {
+        "created_at_version": "1.0.0",
+        "notes": "Multi-times-per-day is the core feature of this task. Each time slot is an independent completable item. Alarm on by default given health importance."
+      }
+    }
+
+  ]
+}

@@ -1,0 +1,224 @@
+{
+  "_metadata": {
+    "_comment": "categories/bin_collection.json — Bin collection category tasks.",
+    "_comment_2": "Category ID: bin_collection. Registered in category-registry.json.",
+    "_comment_3": "Contains: Bin Out (put bin out the night before) and Bin In (bring bin back after collection).",
+    "_comment_4": "Both tasks are typically created together via bin collection API lookup.",
+    "_comment_5": "Bin Out fires the evening before collection. Bin In fires the morning after.",
+    "version": "1.0.0",
+    "last_updated": "2026-02-23",
+    "config_owner": "product"
+  },
+
+  "id": "bin_collection",
+  "label_key": "category.bin_collection.label",
+  "description_key": "category.bin_collection.description",
+  "icon": "delete_outline",
+  "color_hex": "#6A1E55",
+  "_comment_color": "OPTIONAL.",
+  "sort_order": 4,
+  "enabled": true,
+  "default_hidden": false,
+  "unlock_condition": null,
+  "age_group_filter": [],
+  "location_filter": [],
+
+  "bin_types": {
+    "_comment": "UK standard bin types. Used as custom_title options when API creates bin tasks.",
+    "_comment_2": "These are label keys — resolved through i18n. Add new bin types here without code changes.",
+    "types": [
+      { "id": "general_waste",  "label_key": "bin.type.general_waste",  "emoji": "🗑️" },
+      { "id": "recycling",      "label_key": "bin.type.recycling",       "emoji": "♻️" },
+      { "id": "garden_waste",   "label_key": "bin.type.garden_waste",    "emoji": "🌿" },
+      { "id": "food_waste",     "label_key": "bin.type.food_waste",      "emoji": "🍂" },
+      { "id": "glass",          "label_key": "bin.type.glass",           "emoji": "🪟" }
+    ],
+    "_comment_api": "When bin collection API creates tasks, it sets the custom_title to the bin type e.g. 'Recycling Bin Out'."
+  },
+
+  "tasks": [
+
+    {
+      "id": "bin_collection.bin_out",
+      "name_key": "task.bin_collection.bin_out.name",
+      "short_name_key": "task.bin_collection.bin_out.short_name",
+      "description_key": "task.bin_collection.bin_out.description",
+      "_comment_description_example": "Put the bin out the night before collection so you never miss it.",
+      "icon": "arrow_outward",
+      "enabled": true,
+      "sort_order": 1,
+      "source": "bin_api",
+      "_comment_source": "Primarily created by bin collection API. Can also be created manually.",
+
+      "locations": null,
+      "_comment_locations": "Bin tasks are not room-specific — location section hidden.",
+
+      "allowed_repeats": {
+        "_comment": "Bin collection is weekly or fortnightly in most UK councils.",
+        "options": ["weekly", "biweekly"]
+      },
+
+      "multiple_times_per_day": null,
+
+      "default_repeat": "weekly",
+      "_comment_default": "Weekly is the most common UK bin collection frequency.",
+
+      "default_time": "20:00",
+      "_comment_default_time": "Evening reminder — put the bin out after dinner the night before collection.",
+
+      "reminder_options": {
+        "options_minutes": [10, 30, 60],
+        "labels_keys": {
+          "10": "reminder.10m",
+          "30": "reminder.30m",
+          "60": "reminder.1h"
+        },
+        "default_selected_minutes": [30]
+      },
+
+      "linked_task": {
+        "_comment": "Bin Out and Bin In are paired tasks — created together and linked.",
+        "linked_task_id": "bin_collection.bin_in",
+        "link_type": "paired",
+        "_comment_paired": "When Bin Out is created, the app offers to auto-create the paired Bin In task.",
+        "auto_create_paired": true,
+        "_comment_auto_create": "If true, creating Bin Out automatically presents Bin In on the Smart Task Confirmation screen.",
+        "paired_task_time_offset_hours": 16,
+        "_comment_offset": "Bin In is scheduled 16 hours after Bin Out by default. e.g. Bin Out 20:00 → Bin In 12:00 next day."
+      },
+
+      "notification": {
+        "custom_message_key": "task.bin_collection.bin_out.notification_message",
+        "_comment_example_generic": "Don't forget to put the bin out tonight! 🗑️",
+        "_comment_example_typed": "Don't forget to put the {bin_type} bin out tonight! ♻️",
+        "_comment_bin_type_placeholder": "If user has a custom title set (bin type from API), the notification uses it.",
+        "channels": {
+          "app": true,
+          "alarm": false,
+          "email": false,
+          "whatsapp": false
+        }
+      },
+
+      "alarm": {
+        "enabled_by_default": false
+      },
+
+      "summary": {
+        "enabled": true
+      },
+
+      "points": {
+        "per_completion": 1
+      },
+
+      "api_source": {
+        "api_type": "bin_collection",
+        "prepopulate_schedule_screen": true,
+        "prepopulated_fields": {
+          "repeat": "bin_api_response.collection_frequency",
+          "_comment_repeat": "weekly or biweekly from API response.",
+          "day_of_week": "bin_api_response.collection_day",
+          "_comment_day": "The day before collection day. e.g. if collection is Wednesday, Bin Out is Tuesday evening.",
+          "custom_title_template": "{bin_type} Bin Out",
+          "_comment_title_example": "e.g. 'Recycling Bin Out', 'General Waste Bin Out'"
+        },
+        "user_can_modify": true
+      },
+
+      "tags": ["bin", "collection", "weekly", "evening", "reminder"],
+
+      "metadata": {
+        "created_at_version": "1.0.0",
+        "notes": "Bin Out fires evening before collection day. Paired with Bin In. API populates collection day and frequency."
+      }
+    },
+
+    {
+      "id": "bin_collection.bin_in",
+      "name_key": "task.bin_collection.bin_in.name",
+      "short_name_key": "task.bin_collection.bin_in.short_name",
+      "description_key": "task.bin_collection.bin_in.description",
+      "_comment_description_example": "Bring the bin back in after collection — before it blows down the street!",
+      "icon": "arrow_inward",
+      "enabled": true,
+      "sort_order": 2,
+      "source": "bin_api",
+
+      "locations": null,
+
+      "allowed_repeats": {
+        "options": ["weekly", "biweekly"]
+      },
+
+      "multiple_times_per_day": null,
+
+      "default_repeat": "weekly",
+
+      "default_time": "08:00",
+      "_comment_default_time": "Morning after collection — bring the bin back before going to work.",
+
+      "reminder_options": {
+        "options_minutes": [10, 30, 60],
+        "labels_keys": {
+          "10": "reminder.10m",
+          "30": "reminder.30m",
+          "60": "reminder.1h"
+        },
+        "default_selected_minutes": [30]
+      },
+
+      "linked_task": {
+        "linked_task_id": "bin_collection.bin_out",
+        "link_type": "paired",
+        "_comment": "Paired with Bin Out. If Bin Out is deleted, prompt to also delete Bin In."
+      },
+
+      "notification": {
+        "custom_message_key": "task.bin_collection.bin_in.notification_message",
+        "_comment_example_generic": "Time to bring the bin back in! 🗑️",
+        "_comment_example_typed": "Time to bring the {bin_type} bin back in! ♻️",
+        "channels": {
+          "app": true,
+          "alarm": false,
+          "email": false,
+          "whatsapp": false
+        }
+      },
+
+      "alarm": {
+        "enabled_by_default": false
+      },
+
+      "summary": {
+        "enabled": true
+      },
+
+      "points": {
+        "per_completion": 1
+      },
+
+      "api_source": {
+        "api_type": "bin_collection",
+        "prepopulate_schedule_screen": true,
+        "prepopulated_fields": {
+          "repeat": "bin_api_response.collection_frequency",
+          "day_of_week": "bin_api_response.collection_day",
+          "_comment_day": "Collection day itself — morning after.",
+          "time": "bin_out_task.scheduled_time + paired_task_time_offset_hours",
+          "_comment_time": "Scheduled 16 hours after Bin Out by default. e.g. Bin Out 20:00 → Bin In 12:00 next day.",
+          "custom_title_template": "{bin_type} Bin In"
+        },
+        "user_can_modify": true
+      },
+
+      "tags": ["bin", "collection", "weekly", "morning", "reminder"],
+
+      "metadata": {
+        "created_at_version": "1.0.0",
+        "notes": "Bin In fires morning of collection day. Paired with Bin Out. Time is offset from Bin Out schedule."
+      }
+    }
+
+  ]
+}
