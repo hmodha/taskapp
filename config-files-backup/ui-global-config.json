@@ -233,6 +233,29 @@
     "location_intersection_with_user_home": true,
     "_comment_intersection": "On schedule screen, only show locations the user confirmed they have in setup wizard Q3 or preferences.",
 
+    "task_level_override": {
+      "_comment": "OPTIONAL per-task location override — defined inside individual task config files.",
+      "_comment_2": "When present, it FILTERS the central list down to a relevant subset for that specific task.",
+      "_comment_3": "It does NOT replace the central list — the user home intersection still applies on top.",
+      "_comment_4": "Resolution order: task.locations.override_keys (if present) → ui-global-config.default_locations_keys → intersect with user home.",
+      "_comment_5": "Example: a Shower Cleaning task overrides to show only bathroom and ensuite.",
+      "_comment_6": "If a task has no override, the full central list intersected with user home is shown.",
+      "enabled": true,
+      "override_field_name": "locations.override_keys",
+      "_comment_field": "The field name inside task config files to declare a location subset. OPTIONAL — omit to use full central list.",
+      "example_usage": {
+        "_comment": "Documentation only — shows how override_keys is used in a task config file.",
+        "locations": {
+          "enabled": true,
+          "options_source": "ui-global-config.location.default_locations_keys",
+          "override_keys": ["location.bathroom", "location.ensuite"],
+          "_comment_override": "Only these locations shown for this task. Must be valid keys from default_locations_keys.",
+          "multi_select": false,
+          "required": false
+        }
+      }
+    },
+
     "no_location_label_key": "location.whole_home",
     "_comment_no_location": "Shown in task rows and notifications when no specific room is selected for a task."
   },

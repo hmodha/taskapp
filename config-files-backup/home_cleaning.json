@@ -36,17 +36,18 @@
 
       "locations": {
         "_comment": "LOCATION-AWARE TASK — user selects which room this schedule applies to.",
-        "_comment_2": "Location options are sourced centrally from ui-global-config.json location.default_locations_keys.",
-        "_comment_3": "Shown options are intersected with user's confirmed home locations from preferences.",
-        "_comment_4": "Task config files do NOT define their own location arrays — all locations are in ui-global-config.json.",
-        "_comment_5": "User can create separate task entries per room at different frequencies.",
+        "_comment_2": "options_source pulls the full central list from ui-global-config.json.",
+        "_comment_3": "No override_keys here — hoovering is relevant to all rooms so full list is shown.",
+        "_comment_4": "Intersection with user confirmed home locations is applied at runtime.",
+        "_comment_5": "To restrict to specific rooms, add override_keys array with a subset of location keys.",
         "enabled": true,
         "options_source": "ui-global-config.location.default_locations_keys",
-        "_comment_source": "Pull the full central location list. Intersection with user home locations applied at runtime.",
+        "override_keys": null,
+        "_comment_override": "null = no override. Full central list used. Set to an array of location keys to restrict options.",
         "multi_select": false,
         "_comment_multi": "One location per task instance. Create separate tasks for different room schedules.",
         "required": false,
-        "_comment_required": "false = user can save without picking a room — defaults to whole_home label.",
+        "_comment_required": "false = user can save without picking a room — defaults to location.whole_home label.",
         "no_location_label_key": "location.whole_home"
       },
 
