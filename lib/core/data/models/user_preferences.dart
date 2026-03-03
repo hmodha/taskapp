@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../app_database.dart';
+import 'package:drift/drift.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UserPreferences — domain model wrapping UserPreferencesTableData

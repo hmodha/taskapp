@@ -1,13 +1,12 @@
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/config/config_loader.dart';
 import '../../../core/config/config_models.dart';
 import '../../../core/theme/midnight_focus_theme.dart';
 import '../../../router/app_router.dart';
 
-@RoutePage()
 class CategoryScreen extends ConsumerWidget {
   const CategoryScreen({super.key});
 
@@ -22,26 +21,23 @@ class CategoryScreen extends ConsumerWidget {
         backgroundColor: MidnightFocusTheme.surface,
       ),
       body: registryAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: MidnightFocusTheme.primary),
-        ),
+        loading: () => const Center(child: CircularProgressIndicator(color: MidnightFocusTheme.primary)),
         error: (e, _) => _ErrorState(error: e.toString()),
         data: (entries) => _CategoryGrid(entries: entries),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.router.push(
-          TaskListRoute(categoryId: 'custom'),
+        onPressed: () => context.pushSchedule(
+          categoryId: 'custom',
+          taskConfig: const TaskConfig(
+            id: 'custom', nameKey: 'custom_task.name', enabled: true, sortOrder: 0,
+            source: 'manual', allowedRepeats: RepeatOption.values,
+            alarmEnabledByDefault: false, tags: [], encourgeCustomTitle: true,
+          ),
         ),
         backgroundColor: MidnightFocusTheme.primary,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Custom Task',
-          style: TextStyle(
-            color: Colors.white,
-            fontFamily: 'Sora',
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        label: const Text('Custom Task',
+            style: TextStyle(color: Colors.white, fontFamily: 'Sora', fontWeight: FontWeight.w600)),
       ),
     );
   }
@@ -49,7 +45,6 @@ class CategoryScreen extends ConsumerWidget {
 
 class _CategoryGrid extends StatelessWidget {
   const _CategoryGrid({required this.entries});
-
   final List<CategoryRegistryEntry> entries;
 
   @override
@@ -57,10 +52,7 @@ class _CategoryGrid extends StatelessWidget {
     return GridView.builder(
       padding: const EdgeInsets.all(20),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount:    2,
-        crossAxisSpacing:  12,
-        mainAxisSpacing:   12,
-        childAspectRatio:  1.1,
+        crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 1.1,
       ),
       itemCount: entries.length,
       itemBuilder: (context, i) => _CategoryCard(entry: entries[i]),
@@ -70,7 +62,6 @@ class _CategoryGrid extends StatelessWidget {
 
 class _CategoryCard extends StatelessWidget {
   const _CategoryCard({required this.entry});
-
   final CategoryRegistryEntry entry;
 
   Color get _color {
@@ -85,66 +76,40 @@ class _CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _color;
-
     return GestureDetector(
-      onTap: () => context.router.push(TaskListRoute(categoryId: entry.categoryId)),
+      onTap: () => context.pushTaskList(entry.categoryId),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
-          color:        MidnightFocusTheme.surfaceCard,
+          color: MidnightFocusTheme.surfaceCard,
           borderRadius: BorderRadius.circular(18),
-          border:       Border.all(color: MidnightFocusTheme.border),
+          border: Border.all(color: MidnightFocusTheme.border),
         ),
         child: Stack(
           children: [
-            // Subtle colour accent top-right
             Positioned(
               top: -20, right: -20,
               child: Container(
                 width: 80, height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: color.withOpacity(0.12),
-                ),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: color.withValues(alpha: 0.12)),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment:  MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Icon
                   Container(
                     width: 44, height: 44,
-                    decoration: BoxDecoration(
-                      color:        color.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      _iconData(entry.icon),
-                      color: color,
-                      size: 22,
-                    ),
+                    decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                    child: Icon(_iconData(entry.icon), color: color, size: 22),
                   ),
-
-                  // Label
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _resolveLabel(context, entry.labelKey),
-                        style: const TextStyle(
-                          fontFamily:  'Sora',
-                          fontSize:    14,
-                          fontWeight:  FontWeight.w600,
-                          color:       MidnightFocusTheme.textPrimary,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                  Text(
+                    _resolveLabel(entry.labelKey),
+                    style: const TextStyle(fontFamily: 'Sora', fontSize: 14, fontWeight: FontWeight.w600, color: MidnightFocusTheme.textPrimary),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -155,8 +120,7 @@ class _CategoryCard extends StatelessWidget {
     );
   }
 
-  String _resolveLabel(BuildContext context, String key) {
-    // i18n key → localised string. In Phase 1 we map directly.
+  String _resolveLabel(String key) {
     const labels = {
       'category.vehicle.label':        'Vehicle',
       'category.health.label':         'Health',
@@ -193,10 +157,7 @@ class _ErrorState extends StatelessWidget {
           children: [
             const Icon(Icons.error_outline, color: MidnightFocusTheme.error, size: 48),
             const SizedBox(height: 16),
-            Text(
-              'Failed to load categories',
-              style: context.text.titleMedium,
-            ),
+            Text('Failed to load categories', style: context.text.titleMedium),
             const SizedBox(height: 8),
             Text(error, style: context.text.bodySmall, textAlign: TextAlign.center),
           ],

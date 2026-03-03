@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../core/data/app_database.dart';
-import '../core/theme/midnight_focus_theme.dart';
-import '../router/app_router.dart';
+import 'core/data/app_database.dart';
+import 'core/theme/midnight_focus_theme.dart';
+import 'router/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   final db = await initDatabase();
-
   runApp(
     ProviderScope(
       overrides: [databaseProvider.overrideWithValue(db)],
@@ -27,7 +25,7 @@ class TaskApp extends StatelessWidget {
       title: 'TaskApp',
       debugShowCheckedModeBanner: false,
       theme: MidnightFocusTheme.themeData,
-      routerConfig: appRouter, // go_router instance
+      routerConfig: appRouter,
       supportedLocales: const [Locale('en')],
       locale: const Locale('en'),
     );

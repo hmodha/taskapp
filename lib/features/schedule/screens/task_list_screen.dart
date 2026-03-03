@@ -1,6 +1,6 @@
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/config/config_loader.dart';
 import '../../../core/config/config_models.dart';
@@ -8,24 +8,19 @@ import '../../../core/data/repositories/task_repository.dart';
 import '../../../core/theme/midnight_focus_theme.dart';
 import '../../../router/app_router.dart';
 
-@RoutePage()
 class TaskListScreen extends ConsumerWidget {
-  const TaskListScreen({
-    super.key,
-    @PathParam('categoryId') required this.categoryId,
-  });
-
+  const TaskListScreen({super.key, required this.categoryId});
   final String categoryId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Custom tasks go directly to schedule screen
+    // Custom tasks go directly to the schedule screen
     if (categoryId == 'custom') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.router.replace(ScheduleRoute(
+        context.pushSchedule(
           categoryId: 'custom',
           taskConfig: _customTaskConfig(),
-        ));
+        );
       });
       return const SizedBox.shrink();
     }
@@ -37,7 +32,10 @@ class TaskListScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(_categoryLabel(categoryId)),
         backgroundColor: MidnightFocusTheme.surface,
-        leading: const AutoLeadingButton(),
+        leading: BackButton(
+          color: MidnightFocusTheme.textSecondary,
+          onPressed: () => context.pop(),
+        ),
       ),
       body: categoryAsync.when(
         loading: () => const Center(
@@ -53,24 +51,24 @@ class TaskListScreen extends ConsumerWidget {
 
   String _categoryLabel(String id) {
     const labels = {
-      'vehicle':        'Vehicle',
-      'health':         'Health',
-      'home_cleaning':  'Home Cleaning',
+      'vehicle': 'Vehicle',
+      'health': 'Health',
+      'home_cleaning': 'Home Cleaning',
       'bin_collection': 'Bin Collection',
     };
     return labels[id] ?? id;
   }
 
   TaskConfig _customTaskConfig() => const TaskConfig(
-    id:                   'custom',
-    nameKey:              'custom_task.name',
-    enabled:              true,
-    sortOrder:            0,
-    source:               'manual',
-    allowedRepeats:       RepeatOption.values,
+    id: 'custom',
+    nameKey: 'custom_task.name',
+    enabled: true,
+    sortOrder: 0,
+    source: 'manual',
+    allowedRepeats: RepeatOption.values,
     alarmEnabledByDefault: false,
-    tags:                 [],
-    encourgeCustomTitle:  false,
+    tags: [],
+    encourgeCustomTitle: true,
   );
 }
 
@@ -80,10 +78,6 @@ class _TaskList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activeTasks = ref.watch(
-      taskRepositoryProvider.select((_) => _), // trigger rebuild on repo changes
-    );
-
     final tasks = category.tasks.where((t) => t.enabled).toList()
       ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
@@ -91,9 +85,7 @@ class _TaskList extends ConsumerWidget {
       return Center(
         child: Text(
           'No tasks available',
-          style: context.text.bodyMedium?.copyWith(
-            color: MidnightFocusTheme.textSecondary,
-          ),
+          style: context.text.bodyMedium?.copyWith(color: MidnightFocusTheme.textSecondary),
         ),
       );
     }
@@ -119,8 +111,8 @@ class _TaskListTile extends ConsumerWidget {
   });
 
   final TaskConfig task;
-  final String categoryId;
-  final String? colorHex;
+  final String     categoryId;
+  final String?    colorHex;
 
   Color get _accentColor {
     if (colorHex == null) return MidnightFocusTheme.primary;
@@ -139,10 +131,7 @@ class _TaskListTile extends ConsumerWidget {
         final isScheduled = snapshot.data ?? false;
 
         return GestureDetector(
-          onTap: () => context.router.push(ScheduleRoute(
-            categoryId: categoryId,
-            taskConfig: task,
-          )),
+          onTap: () => context.pushSchedule(categoryId: categoryId, taskConfig: task),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
@@ -150,28 +139,21 @@ class _TaskListTile extends ConsumerWidget {
               borderRadius: BorderRadius.circular(14),
               border:       Border.all(
                 color: isScheduled
-                    ? _accentColor.withOpacity(0.4)
+                    ? _accentColor.withValues(alpha: 0.4)
                     : MidnightFocusTheme.border,
               ),
             ),
             child: Row(
               children: [
-                // Icon
                 Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
-                    color:        _accentColor.withOpacity(0.12),
+                    color:        _accentColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(
-                    _iconData(task.icon ?? 'task_alt'),
-                    color: _accentColor,
-                    size: 20,
-                  ),
+                  child: Icon(_iconData(task.icon ?? 'task_alt'), color: _accentColor, size: 20),
                 ),
                 const SizedBox(width: 14),
-
-                // Name + source tag
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,10 +161,8 @@ class _TaskListTile extends ConsumerWidget {
                       Text(
                         _resolveTaskName(task.nameKey),
                         style: const TextStyle(
-                          fontFamily:  'Sora',
-                          fontSize:    15,
-                          fontWeight:  FontWeight.w600,
-                          color:       MidnightFocusTheme.textPrimary,
+                          fontFamily: 'Sora', fontSize: 15, fontWeight: FontWeight.w600,
+                          color: MidnightFocusTheme.textPrimary,
                         ),
                       ),
                       if (task.source != 'manual') ...[
@@ -190,25 +170,17 @@ class _TaskListTile extends ConsumerWidget {
                         Text(
                           _sourceLabel(task.source),
                           style: const TextStyle(
-                            fontFamily: 'Sora',
-                            fontSize:   11,
-                            color:      MidnightFocusTheme.textSecondary,
+                            fontFamily: 'Sora', fontSize: 11, color: MidnightFocusTheme.textSecondary,
                           ),
                         ),
                       ],
                     ],
                   ),
                 ),
-
-                // Scheduled indicator
                 if (isScheduled)
                   Icon(Icons.check_circle, color: _accentColor, size: 18)
                 else
-                  const Icon(
-                    Icons.chevron_right,
-                    color: MidnightFocusTheme.textDisabled,
-                    size: 20,
-                  ),
+                  const Icon(Icons.chevron_right, color: MidnightFocusTheme.textDisabled, size: 20),
               ],
             ),
           ),
@@ -219,34 +191,34 @@ class _TaskListTile extends ConsumerWidget {
 
   String _resolveTaskName(String key) {
     const names = {
-      'task.vehicle.car_mot.name':              'Car MOT',
-      'task.vehicle.road_tax.name':             'Road Tax',
-      'task.health.medication.name':            'Medication',
-      'task.home_cleaning.hoovering.name':      'Hoovering',
-      'task.bin_collection.bin_out.name':       'Bin Out',
-      'task.bin_collection.bin_in.name':        'Bin In',
+      'task.vehicle.car_mot.name':         'Car MOT',
+      'task.vehicle.road_tax.name':        'Road Tax',
+      'task.health.medication.name':       'Medication',
+      'task.home_cleaning.hoovering.name': 'Hoovering',
+      'task.bin_collection.bin_out.name':  'Bin Out',
+      'task.bin_collection.bin_in.name':   'Bin In',
     };
     return names[key] ?? key;
   }
 
   String _sourceLabel(String source) {
     const labels = {
-      'dvla_api':       'Via DVLA lookup',
-      'bin_api':        'Via bin collection API',
-      'setup_wizard':   'From setup',
+      'dvla_api':    'Via DVLA lookup',
+      'bin_api':     'Via bin collection API',
+      'setup_wizard': 'From setup',
     };
     return labels[source] ?? source;
   }
 
   IconData _iconData(String name) {
     const icons = {
-      'build_circle':         Icons.build_circle,
-      'receipt_long':         Icons.receipt_long,
-      'medication':           Icons.medication,
-      'cleaning_services':    Icons.cleaning_services,
-      'arrow_outward':        Icons.arrow_outward,
-      'arrow_inward':         Icons.arrow_back,
-      'task_alt':             Icons.task_alt,
+      'build_circle':     Icons.build_circle,
+      'receipt_long':     Icons.receipt_long,
+      'medication':       Icons.medication,
+      'cleaning_services': Icons.cleaning_services,
+      'arrow_outward':    Icons.arrow_outward,
+      'arrow_inward':     Icons.arrow_back,
+      'task_alt':         Icons.task_alt,
     };
     return icons[name] ?? Icons.task_alt;
   }

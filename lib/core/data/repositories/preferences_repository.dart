@@ -1,18 +1,13 @@
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../app_database.dart';
-import '../../../../models/user_preferences.dart';
+import '../models/user_preferences.dart';
 
-part '../../../preferences_repository.g.dart';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PreferencesRepository — singleton UserPreferences row in drift
-// ─────────────────────────────────────────────────────────────────────────────
+part 'preferences_repository.g.dart';
 
 class PreferencesRepository {
   PreferencesRepository(this._db);
-
   final AppDatabase _db;
 
   Future<UserPreferences> get() async {
@@ -23,8 +18,9 @@ class PreferencesRepository {
   }
 
   Future<UserPreferences> save(UserPreferences prefs) async {
-    final companion = prefs.toCompanion();
-    await _db.into(_db.userPreferencesTable).insertOnConflictUpdate(companion);
+    await _db
+        .into(_db.userPreferencesTable)
+        .insertOnConflictUpdate(prefs.toCompanion());
     return prefs;
   }
 
@@ -54,11 +50,11 @@ class PreferencesRepository {
 }
 
 @riverpod
-PreferencesRepository preferencesRepository(PreferencesRepositoryRef ref) {
+PreferencesRepository preferencesRepository(Ref ref) {
   return PreferencesRepository(ref.watch(databaseProvider));
 }
 
 @riverpod
-Future<UserPreferences> userPreferences(UserPreferencesRef ref) async {
+Future<UserPreferences> userPreferences(Ref ref) async {
   return ref.watch(preferencesRepositoryProvider).get();
 }

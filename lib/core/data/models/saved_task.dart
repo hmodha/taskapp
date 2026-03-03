@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../app_database.dart';
+import 'package:drift/drift.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SavedTask — domain model used throughout the app (not a DB row directly).

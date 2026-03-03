@@ -91,13 +91,13 @@ class ConfigLoadException implements Exception {
 // ─────────────────────────────────────────────────────────────────────────────
 
 @riverpod
-ConfigLoader configLoader(ConfigLoaderRef ref) {
+ConfigLoader configLoader(Ref ref) {
   return ConfigLoader(DefaultCacheManager());
 }
 
 @riverpod
 Future<List<CategoryRegistryEntry>> categoryRegistry(
-  CategoryRegistryRef ref,
+  Ref ref,
 ) async {
   final loader = ref.watch(configLoaderProvider);
   final json   = await loader.load('config/category-registry.json');
@@ -113,7 +113,7 @@ Future<List<CategoryRegistryEntry>> categoryRegistry(
 
 @riverpod
 Future<CategoryConfig> categoryConfig(
-  CategoryConfigRef ref,
+  Ref ref,
   String categoryId,
 ) async {
   final loader   = ref.watch(configLoaderProvider);

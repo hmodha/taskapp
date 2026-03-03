@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.2.0 <4.0.0'
+  sdk: '>=3.4.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -13,20 +13,13 @@ dependencies:
     sdk: flutter
 
   # ── State management ───────────────────────────────────────────────────────
-  # All three riverpod packages MUST share the same version number.
   flutter_riverpod: ^2.6.1
   riverpod_annotation: ^2.6.1
 
   # ── Navigation ─────────────────────────────────────────────────────────────
-  # go_router replaces auto_route. Reason: auto_route_generator and
-  # riverpod_generator fight over analyzer/macros versions — unfixable conflict.
-  # go_router requires ZERO codegen — routes defined in plain Dart.
-  # Maintained by the Flutter team. go_router ^14.x is current stable.
   go_router: ^14.0.2
 
   # ── Local database ─────────────────────────────────────────────────────────
-  # drift + drift_dev for reactive SQLite. Replaces isar (isar_generator
-  # was incompatible with all other codegen packages).
   drift: ^2.18.0
   sqlite3_flutter_libs: ^0.5.24
   path_provider: ^2.1.3
@@ -35,10 +28,8 @@ dependencies:
   # ── Notifications ──────────────────────────────────────────────────────────
   flutter_local_notifications: ^18.0.1
   timezone: ^0.9.4
-  flutter_timezone: ^1.0.8
 
   # ── Internationalisation ───────────────────────────────────────────────────
-  # Never pin intl exactly when using flutter_localizations.
   intl: '>=0.17.0 <1.0.0'
 
   # ── Config loading ─────────────────────────────────────────────────────────
@@ -55,10 +46,9 @@ dev_dependencies:
   flutter_lints: ^4.0.0
 
   # ── Code generation ────────────────────────────────────────────────────────
-  # Only two codegen packages remain — both are compatible with each other.
   build_runner: ^2.4.13
-  riverpod_generator: ^2.6.1   # must match flutter_riverpod exactly
-  drift_dev: ^2.18.0           # must match drift exactly
+  riverpod_generator: ^2.6.1
+  drift_dev: ^2.18.0
 
 flutter:
   uses-material-design: true
